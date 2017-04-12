@@ -86,6 +86,8 @@ class BasicQubit(object):
         Args:
             other (BasicQubit): BasicQubit to which to compare this one
         """
+        if self.id == -1:
+            return self is other
         return (isinstance(other, BasicQubit) and
                 self.id == other.id and
                 self.engine == other.engine)
@@ -100,7 +102,9 @@ class BasicQubit(object):
         Hash definition because of custom __eq__.
         Enables storing a qubit in, e.g., a set.
         """
-        return hash((self.id, self.engine, object.__hash__(self)))
+        if self.id == -1:
+            return object.__hash__(self)
+        return hash((self.engine, self.id))
 
 
 class Qubit(BasicQubit):

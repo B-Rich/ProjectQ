@@ -126,6 +126,10 @@ class Command(object):
     def qubits(self, qubits):
         self._qubits = self._order_qubits(qubits)
 
+    def untouched_qubits(self):
+        touched = set(q for reg in self.all_qubits for q in reg)
+        return set(self.engine.main_engine.active_qubits) - touched
+
     def __deepcopy__(self, memo):
         """ Deepcopy implementation. Engine should stay a reference."""
         cpy = Command(self.engine,
@@ -267,6 +271,9 @@ class Command(object):
         """
         Return engine to which the qubits belong / on which the gates are
         executed.
+
+        Returns:
+            projectq.cengines.BasicEngine:
         """
         return self._engine
 
@@ -276,7 +283,8 @@ class Command(object):
         Set / Change engine of all qubits to engine.
 
         Args:
-            engine: New owner of qubits and owner of this Command object
+            engine (projectq.cengines.BasicEngine):
+                New owner of qubits and owner of this Command object
         """
         self._engine = engine
         for qureg in self.qubits:

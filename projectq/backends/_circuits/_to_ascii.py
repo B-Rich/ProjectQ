@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 from collections import defaultdict
 
-from projectq.ops import Command, Allocate, Deallocate, Swap, XGate
+from projectq.ops import Command, Allocate, Deallocate, Swap, XGate, FlushGate
 
 
 def _between_wire_pattern(cur_role, next_role):
@@ -140,6 +140,10 @@ def commands_to_ascii_circuit(commands):
         str:
             Fixed-width text drawing using ascii and unicode characters.
     """
+    commands = list(cmd
+                    for cmd in commands
+                    if not isinstance(cmd.gate, FlushGate))
+
     qubit_ids = set(qubit.id
                     for cmd in commands
                     for qureg in cmd.all_qubits
@@ -166,4 +170,4 @@ def commands_to_ascii_circuit(commands):
 
     return '\n'.join(''.join(col[row]
                              for col in cols).rstrip()
-                     for row in range(len(empty_col))).strip()
+                     for row in range(len(empty_col))).rstrip()
