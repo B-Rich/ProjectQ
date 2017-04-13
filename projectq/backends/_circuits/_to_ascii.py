@@ -23,7 +23,7 @@ def _between_wire_pattern(cur_role, next_role):
 
 
 def _on_wire_pattern(role):
-    return ('  • ' if 'control' in role
+    return ('──•─' if 'control' in role
             else '┤  ├' if 'register' in role
             else '──┼─')
 
@@ -54,44 +54,59 @@ def _between_wire_cols(has_controls, used_indices, roles, index_to_id, w,
     return between_wires
 
 
-def _on_wire_cols(name, has_controls, used_indices, roles, index_to_id, w,
+def _on_wire_cols(labels, has_controls, used_indices, roles, index_to_id, w,
                   border):
+    label_positions = {}
+    for i in range(len(labels)):
+        found = [j
+                 for j in range(len(index_to_id))
+                 if 'register'+str(i) in roles[j] and j not in label_positions]
+        if border:
+            if found:
+                label_positions[found[len(found)//2]] = labels[i]
+        else:
+            for f in found:
+                label_positions[f] = labels[i]
+
     on_wires = []
-    used = False
     for i in range(len(index_to_id)):
         role = roles[index_to_id[i]]
-        if not border and 'register' in role:
-            on_wires.append(name)
+        if not border and i in label_positions:
+            on_wires.append(label_positions[i])
             continue
         pattern = _on_wire_pattern(role)
         has_control_line = (has_controls and
                             min(used_indices) <= i <= max(used_indices))
-        spacing_w = w - 3 if border else w - 1
-        w1 = spacing_w // 2
-        w2 = spacing_w - w1
 
         space = pattern[1] if border else '─'
         control_line = pattern[2]
-        mid = control_line if has_control_line else space
+        mid = control_line if has_control_line else ''
+        if i in label_positions:
+            mid = label_positions[i]
+
+        spacing_w = w - (2 if border else 0) - len(mid)
+        w1 = spacing_w // 2
+        w2 = spacing_w - w1
         center = space * w1 + mid + space * w2
-        if 'register' in role and not used:
-            center = ' ' + name + ' '
-            used = True
         full = pattern[0] + center + pattern[3] if border else center
         on_wires.append(full)
     return on_wires
 
 
-def _name_border(cmd):
+def _labels_border(cmd):
     if cmd.gate is Allocate:
-        return '|0⟩', False
+        return ['|0⟩'], False
     if cmd.gate is Deallocate:
-        return '┤  ', False
+        return ['┤  '], False
     if cmd.gate is Swap:
-        return '×', False
+        return ['×', '×'], False
     if isinstance(cmd.gate, XGate):
-        return '⊕', False
-    return str(cmd.gate), True
+        return ['⊕'], False
+
+    border = not hasattr(cmd.gate, 'ascii_borders') or cmd.gate.ascii_borders()
+    if hasattr(cmd.gate, 'ascii_register_labels'):
+        return cmd.gate.ascii_register_labels(), border
+    return [str(cmd.gate)], border
 
 
 def _wire_col(cmd, id_to_index, index_to_id):
@@ -108,8 +123,8 @@ def _wire_col(cmd, id_to_index, index_to_id):
             roles[q.id].add('register')
             roles[q.id].add('register' + str(i))
 
-    name, border = _name_border(cmd)
-    w = len(name) + (4 if border else 0)
+    labels, border = _labels_border(cmd)
+    w = max(len(e) for e in labels) + (4 if border else 0)
 
     between_wires = _between_wire_cols(len(cmd.control_qubits) > 0,
                                        used_indices,
@@ -117,7 +132,7 @@ def _wire_col(cmd, id_to_index, index_to_id):
                                        index_to_id,
                                        w,
                                        border)
-    on_wires = _on_wire_cols(name,
+    on_wires = _on_wire_cols(labels,
                              len(cmd.control_qubits) > 0,
                              used_indices,
                              roles,

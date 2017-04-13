@@ -23,6 +23,7 @@ from ._metagates import (DaggeredGate,
                          get_inverse,
                          ControlledGate,
                          C,
+                         C_star,
                          Tensor,
                          All)
 from ._gates import *

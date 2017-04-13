@@ -15,7 +15,7 @@
 
 from copy import deepcopy
 from projectq.cengines import BasicEngine
-from projectq.ops import FlushGate, Allocate, Deallocate
+from projectq.ops import FlushGate, ClassicalInstructionGate, XGate
 
 
 class CompareEngine(BasicEngine):
@@ -121,3 +121,41 @@ class DummyEngine(BasicEngine):
             self.send(command_list)
         else:
             pass
+
+
+class LimitedCapabilityEngine(BasicEngine):
+    def __init__(self,
+                 allow_classical_instructions=True,
+                 allow_toffoli=False,
+                 allow_nots_with_many_controls=False,
+                 allow_single_qubit_gates=False):
+        BasicEngine.__init__(self)
+        self.allow_nots_with_many_controls = allow_nots_with_many_controls
+        self.allow_single_qubit_gates = allow_single_qubit_gates
+        self.allow_toffoli = allow_toffoli
+        self.allow_classical_instructions = allow_classical_instructions
+
+    def is_available(self, cmd):
+        return (self._allow_command(cmd) and
+                (self.is_last_engine or self.next_engine.is_available(cmd)))
+
+    def receive(self, command_list):
+        if not self.is_last_engine:
+            self.send(command_list)
+
+    def _allow_command(self, cmd):
+        if (self.allow_classical_instructions and
+                isinstance(cmd.gate, ClassicalInstructionGate)):
+            return True
+
+        if (self.allow_toffoli and isinstance(cmd.gate, XGate) and
+                len(cmd.control_qubits) <= 2):
+            return True
+
+        if self.allow_single_qubit_gates and len(cmd.all_qubits) == 1:
+            return True
+
+        if self.allow_nots_with_many_controls and isinstance(cmd.gate, XGate):
+            return True
+
+        return False

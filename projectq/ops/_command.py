@@ -87,7 +87,7 @@ class Command(object):
         all_qubits: A tuple of control_qubits + qubits
     """
 
-    def __init__(self, engine, gate, qubits, controls=()):
+    def __init__(self, engine, gate, qubits, controls=(), tags=()):
         """
         Initialize a Command object.
 
@@ -106,12 +106,19 @@ class Command(object):
             qubits (tuple[Qureg]):
                 Tuple of quantum registers (to which the gate is applied)
         """
+        bad = set(controls).intersection(set(q
+                                             for reg in qubits
+                                             for q in reg))
+        if bad:
+            raise ValueError("Used a qubit as both a target and a control.\n"
+                             "" + str(sorted([e.id for e in bad])))
+
         qubits = tuple([WeakQubitRef(qubit.engine, qubit.id)
                         for qubit in qreg]
                        for qreg in qubits)
 
         self.gate = gate
-        self.tags = []
+        self.tags = list(tags)
         self.qubits = qubits  # property
 
         # access via self.control_qubits property
@@ -128,17 +135,19 @@ class Command(object):
         self._qubits = self._order_qubits(qubits)
 
     def untouched_qubits(self):
-        touched = set(q for reg in self.all_qubits for q in reg)
-        return set(self.engine.main_engine.active_qubits) - touched
+        touched = set(q.id for reg in self.all_qubits for q in reg)
+        avail = set(q.id for q in self.engine.main_engine.active_qubits)
+        untouched = avail - touched
+        result = list(WeakQubitRef(self.engine, qid) for qid in untouched)
+        return sorted(result, key=lambda q: q.id)
 
     def __deepcopy__(self, memo):
         """ Deepcopy implementation. Engine should stay a reference."""
-        cpy = Command(self.engine,
-                      deepcopy(self.gate),
-                      self.qubits,
-                      list(self.control_qubits))
-        cpy.tags = deepcopy(self.tags)
-        return cpy
+        return Command(self.engine,
+                       deepcopy(self.gate),
+                       self.qubits,
+                       list(self.control_qubits),
+                       deepcopy(self.tags))
 
     def get_inverse(self):
         """
@@ -229,7 +238,7 @@ class Command(object):
         Set control_qubits to qubits
 
         Args:
-            control_qubits (Qureg): quantum register
+            qubits (Qureg): quantum register
         """
         self._control_qubits = ([WeakQubitRef(qubit.engine, qubit.id)
                                  for qubit in qubits])
@@ -252,6 +261,20 @@ class Command(object):
         self._control_qubits.extend([WeakQubitRef(qubit.engine, qubit.id)
                                     for qubit in qubits])
         self._control_qubits = sorted(self._control_qubits, key=lambda x: x.id)
+
+    def with_extra_control_qubits(self, extra_controls):
+        """
+        Args:
+            extra_controls (Qureg|list[Qubit]):
+        Returns:
+            Command:
+        """
+        return Command(
+            self.engine,
+            self.gate,
+            self.qubits,
+            self.control_qubits + list(extra_controls),
+            deepcopy(self.tags))
 
     @property
     def all_qubits(self):

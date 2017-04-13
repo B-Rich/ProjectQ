@@ -222,6 +222,40 @@ class ControlledGate(BasicGate):
         return not self.__eq__(other)
 
 
+class ManyControlledGate(BasicGate):
+    def __init__(self, gate):
+        BasicGate.__init__(self)
+        self._gate = gate
+
+    def __str__(self):
+        """ Return string representation, i.e., CC...C(gate). """
+        return "C*" + str(self._gate)
+
+    def __repr__(self):
+        return "ManyControlledGate(" + repr(self._gate) + ")"
+
+    def get_inverse(self):
+        return ControlledGate(self._gate.get_inverse())
+
+    def generate_commands(self, qubits):
+        controls = qubits[0]
+        rest = qubits[1]
+        return [cmd.with_extra_control_qubits(controls)
+                for cmd in self._gate.generate_commands(rest)]
+
+    def __eq__(self, other):
+        """ Compare two ControlledGate objects (return True if equal). """
+        return (isinstance(other, ManyControlledGate) and
+                self._gate == other._gate)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+
+def C_star(gate):
+    return ManyControlledGate(gate)
+
+
 def C(gate, n=1):
     """
     Return n-controlled version of the provided gate.

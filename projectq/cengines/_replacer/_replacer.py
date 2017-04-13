@@ -77,12 +77,14 @@ class AutoReplacer(BasicEngine):
     further. The loaded setup is used to find decomposition rules appropriate
     for each command (e.g., setups.default).
     """
-    def __init__(self, decompositionRuleSet, decomposition_chooser=
+    def __init__(self, decomposition_rule_set, decomposition_chooser=
                  lambda cmd, decomposition_list: decomposition_list[0]):
         """
         Initialize an AutoReplacer.
 
         Args:
+            decomposition_rule_set (DecompositionRuleSet):
+                Decomposition rules to use.
             decomposition_chooser (function): A function which, given the
                 Command to decompose and a list of potential Decomposition
                 objects, determines (and then returns) the 'best'
@@ -105,7 +107,7 @@ class AutoReplacer(BasicEngine):
         """
         BasicEngine.__init__(self)
         self._decomp_chooser = decomposition_chooser
-        self.decompositionRuleSet = decompositionRuleSet
+        self.decompositionRuleSet = decomposition_rule_set
 
     def _process_command(self, cmd):
         """
@@ -121,65 +123,63 @@ class AutoReplacer(BasicEngine):
         """
         if self.is_available(cmd):
             self.send([cmd])
-        else:
-            # check for decomposition rules
-            decomp_list = []
-            potential_decomps = []
-            inv_list = []
+            return
 
-            # check for forward rules
-            cls = cmd.gate.__class__.__name__
-            try:
-                potential_decomps = [
-                    d for d in self.decompositionRuleSet.decompositions[cls]
-                ]
-            except KeyError:
-                pass
-            # check for rules implementing the inverse gate
-            # and run them in reverse
-            inv_cls = get_inverse(cmd.gate).__class__.__name__
-            try:
-                potential_decomps += [
-                    d.get_inverse_decomposition()
-                    for d in self.decompositionRuleSet.decompositions[inv_cls]
-                ]
-            except KeyError:
-                pass
-            # throw out the ones which don't recognize the command
-            for d in potential_decomps:
-                if d.check(cmd):
-                    decomp_list.append(d)
+        # check for decomposition rules
+        potential_decomps = []
+        inv_list = []
 
-            if len(decomp_list) == 0:
-                raise NoGateDecompositionError("\nNo replacement found for "
-                                               + str(cmd) + "!")
+        # check for forward rules
+        cls = cmd.gate.__class__.__name__
+        try:
+            potential_decomps = [
+                d for d in self.decompositionRuleSet.decompositions[cls]
+            ]
+        except KeyError:
+            pass
+        # check for rules implementing the inverse gate
+        # and run them in reverse
+        inv_cls = get_inverse(cmd.gate).__class__.__name__
+        try:
+            potential_decomps += [
+                d.get_inverse_decomposition()
+                for d in self.decompositionRuleSet.decompositions[inv_cls]
+            ]
+        except KeyError:
+            pass
+        # throw out the ones which don't recognize the command
+        decomp_list = [d for d in potential_decomps if d.check(cmd)]
 
-            # use decomposition chooser to determine the best decomposition
-            chosen_decomp = self._decomp_chooser(cmd, decomp_list)
+        if len(decomp_list) == 0:
+            raise NoGateDecompositionError("\nNo replacement found for "
+                                           + str(cmd) + "!")
 
-            # the decomposed command must have the same tags
-            # (plus the ones it gets from meta-statements inside the
-            # decomposition rule).
-            # --> use a CommandModifier with a ForwarderEngine to achieve this.
-            old_tags = cmd.tags[:]
+        # use decomposition chooser to determine the best decomposition
+        chosen_decomp = self._decomp_chooser(cmd, decomp_list)
 
-            def cmd_mod_fun(cmd):  # Adds the tags
-                cmd.tags = old_tags[:] + cmd.tags
-                cmd.engine = self.main_engine
-                return cmd
-            # the CommandModifier calls cmd_mod_fun for each command
-            # --> commands get the right tags.
-            cmod_eng = CommandModifier(cmd_mod_fun)
-            cmod_eng.next_engine = self  # send modified commands back here
-            cmod_eng.main_engine = self.main_engine
-            # forward everything to cmod_eng using the ForwarderEngine
-            # which behaves just like MainEngine
-            # (--> meta functions still work)
-            forwarder_eng = ForwarderEngine(cmod_eng)
-            cmd.engine = forwarder_eng  # send gates directly to forwarder
-            # (and not to main engine, which would screw up the ordering).
+        # the decomposed command must have the same tags
+        # (plus the ones it gets from meta-statements inside the
+        # decomposition rule).
+        # --> use a CommandModifier with a ForwarderEngine to achieve this.
+        old_tags = cmd.tags[:]
 
-            chosen_decomp.decompose(cmd)  # run the decomposition
+        def cmd_mod_fun(cmd):  # Adds the tags
+            cmd.tags = old_tags[:] + cmd.tags
+            cmd.engine = self.main_engine
+            return cmd
+        # the CommandModifier calls cmd_mod_fun for each command
+        # --> commands get the right tags.
+        cmod_eng = CommandModifier(cmd_mod_fun)
+        cmod_eng.next_engine = self  # send modified commands back here
+        cmod_eng.main_engine = self.main_engine
+        # forward everything to cmod_eng using the ForwarderEngine
+        # which behaves just like MainEngine
+        # (--> meta functions still work)
+        forwarder_eng = ForwarderEngine(cmod_eng)
+        cmd.engine = forwarder_eng  # send gates directly to forwarder
+        # (and not to main engine, which would screw up the ordering).
+
+        chosen_decomp.decompose(cmd)  # run the decomposition
 
     def receive(self, command_list):
         """

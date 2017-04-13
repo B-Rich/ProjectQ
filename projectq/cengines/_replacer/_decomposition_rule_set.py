@@ -11,7 +11,7 @@
 #   limitations under the License.
 
 from projectq.meta import Dagger
-from projectq.cengines import DecompositionRule
+from . import DecompositionRule
 
 
 class DecompositionRuleSet:
@@ -22,7 +22,7 @@ class DecompositionRuleSet:
         """
         Args:
             rules (list[DecompositionRule]): Initial decomposition rules.
-            modules (list[ModuleWithDecompositionRuleSet]): A list of
+            modules (list[ModuleWithDecompositionRuleSet|*]): A list of
                 things with an "all_defined_decomposition_rules" property
                 containing decomposition rules to add to the rule set.
         """

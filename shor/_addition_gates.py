@@ -1,0 +1,42 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
+from projectq.ops import BasicGate, NotMergeable
+
+
+class AdditionGate(BasicGate):
+    def get_inverse(self):
+        return SubtractionGate()
+
+    def get_merged(self, other):
+        raise NotMergeable()
+
+    def __repr__(self):
+        return 'Add'
+
+    def __str__(self):
+        return 'Add'
+
+    def ascii_register_labels(self):
+        return ['A', '+A']
+
+
+class SubtractionGate(BasicGate):
+    def get_inverse(self):
+        return AdditionGate()
+
+    def get_merged(self, other):
+        raise NotMergeable()
+
+    def __repr__(self):
+        return 'Subtract'
+
+    def __str__(self):
+        return 'Subtract'
+
+    def ascii_register_labels(self):
+        return ['A', '−A']
+
+
+Add = AdditionGate()
+Subtract = SubtractionGate()

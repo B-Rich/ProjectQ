@@ -2,13 +2,12 @@
 from __future__ import division
 from __future__ import unicode_literals
 
-import random
-
 from projectq import MainEngine
-from projectq.backends import Simulator
 from projectq.cengines import DummyEngine, AutoReplacer, DecompositionRuleSet
 from projectq.ops import Allocate, Swap, X, C
-from shor._add_same_size_no_controls import do_addition_with_same_size_and_no_controls
+from projectq.setups.decompositions import swap2cnot
+from ._addition_decompositions import do_addition_with_same_size_and_no_controls
+from ._test_util import fuzz_permutation_against_circuit
 
 
 def test_exact_commands_for_small_circuit():
@@ -25,9 +24,9 @@ def test_exact_commands_for_small_circuit():
         Allocate.generate_commands(c),
         Allocate.generate_commands(x),
         Allocate.generate_commands(y),
-        C(X).generate_commands((c, a)),
-        C(X).generate_commands((c, x)),
         C(X).generate_commands((c, y)),
+        C(X).generate_commands((c, x)),
+        C(X).generate_commands((c, a)),
         C(X).generate_commands((c, x)),
         C(Swap).generate_commands((x, a, c)),
         C(X).generate_commands((c, y)),
@@ -40,33 +39,15 @@ def test_exact_commands_for_small_circuit():
 
 
 def test_equivalence_to_expected_permutation_by_fuzzing():
-    from projectq.setups.decompositions import swap2cnot
     for _ in range(10):
-        reg_size = 5
-        limit = 1 << reg_size
-        src_in = random.randint(0, limit - 1)
-        dst_in = random.randint(0, limit - 1)
-        src_out = src_in
-        dst_out = (src_in + dst_in) % limit
-
-        backend = Simulator()
-        eng = MainEngine(backend=backend, engine_list=[
-            AutoReplacer(DecompositionRuleSet(modules=[swap2cnot]))
-        ])
-
-        # Encode inputs.
-        src = eng.allocate_qureg(reg_size)
-        dst = eng.allocate_qureg(reg_size)
-        for i in range(reg_size):
-            if src_in & (1 << i):
-                X | src[i]
-            if dst_in & (1 << i):
-                X | dst[i]
-
-        # Simulate.
-                do_addition_with_same_size_and_no_controls(eng, src, dst)
-        eng.flush()
-
-        # Compare outputs.
-        _, state = backend.cheat()
-        assert state[src_out + (dst_out << reg_size)] == 1
+        fuzz_permutation_against_circuit(
+            register_sizes=[4, 4],
+            outputs_for_input=lambda a, b: (a, b + a),
+            engine_list=[AutoReplacer(DecompositionRuleSet(modules=[
+                swap2cnot
+            ]))],
+            actions=lambda eng, regs:
+                do_addition_with_same_size_and_no_controls(
+                    eng,
+                    input_reg=regs[0],
+                    target_reg=regs[1]))

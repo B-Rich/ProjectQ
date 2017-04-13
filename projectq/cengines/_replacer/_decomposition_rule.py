@@ -25,9 +25,10 @@ class DecompositionRule:
     def __init__(self,
                  gate_class,
                  gate_decomposer,
-                 allocated_but_untouched_bits_required=0,
+                 custom_predicate=lambda cmd: True,
+                 min_allocated_but_untouched_bits=0,
                  max_controls=float('infinity'),
-                 custom_predicate=lambda cmd: True):
+                 min_controls=0):
         """
         Args:
             gate_class (type): The type of gate that this rule decomposes.
@@ -45,7 +46,7 @@ class DecompositionRule:
                 corresponding to the high-level function of a gate of type
                 gate_class.
 
-            allocated_but_untouched_bits_required (int):
+            min_allocated_but_untouched_bits (int):
                 When this many 'workspace qubits' aren't already allocated and
                 available, the decomposition won't be used.
 
@@ -76,8 +77,9 @@ class DecompositionRule:
 
         self.gate_class = gate_class
         self.gate_decomposer = gate_decomposer
-        self._min_extra_space = allocated_but_untouched_bits_required
+        self._min_extra_space = min_allocated_but_untouched_bits
         self._max_controls = max_controls
+        self._min_controls = min_controls
         self._custom_predicate = custom_predicate
 
     def can_apply_to_command(self, command):
@@ -89,7 +91,9 @@ class DecompositionRule:
         """
         return (
             isinstance(command.gate, self.gate_class) and
-            len(command.control_qubits) > self._max_controls and
+            (self._min_controls <=
+                len(command.control_qubits) <=
+                self._max_controls) and
             (self._min_extra_space == 0 or
-             self._min_extra_space <= len(command.untouched_qubits())) and
+             len(command.untouched_qubits()) >= self._min_extra_space) and
             self._custom_predicate(command))
