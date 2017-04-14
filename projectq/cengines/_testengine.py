@@ -15,7 +15,9 @@
 
 from copy import deepcopy
 from projectq.cengines import BasicEngine
-from projectq.ops import FlushGate, ClassicalInstructionGate, XGate
+from projectq.ops import (
+    FlushGate, ClassicalInstructionGate, XGate, BasicMathGate
+)
 
 
 class CompareEngine(BasicEngine):
@@ -135,6 +137,7 @@ class LimitedCapabilityEngine(BasicEngine):
     """
     def __init__(self,
                  allow_classical_instructions=True,
+                 allow_arithmetic=False,
                  allow_all=False,
                  allow_toffoli=False,
                  allow_nots_with_many_controls=False,
@@ -151,6 +154,9 @@ class LimitedCapabilityEngine(BasicEngine):
             allow_all (bool):
                 Defaults to allowing all commands.
                 Any ban criteria will override this default.
+
+            allow_arithmetic (bool):
+                Allows gates with the BasicMathGate type.
 
             allow_classical_instructions (bool):
                 Enabled by default. Marks classical instruction commands like
@@ -173,6 +179,7 @@ class LimitedCapabilityEngine(BasicEngine):
                 Bans any gates matching the given class.
         """
         BasicEngine.__init__(self)
+        self.allow_arithmetic = allow_arithmetic
         self.allow_all = allow_all
         self.allow_nots_with_many_controls = allow_nots_with_many_controls
         self.allow_single_qubit_gates = allow_single_qubit_gates
@@ -197,6 +204,9 @@ class LimitedCapabilityEngine(BasicEngine):
         return False
 
     def _allow_command(self, cmd):
+        if self.allow_arithmetic and isinstance(cmd.gate, BasicMathGate):
+            return True
+
         if (self.allow_classical_instructions and
                 isinstance(cmd.gate, ClassicalInstructionGate)):
             return True

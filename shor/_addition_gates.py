@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from projectq.ops import BasicMathGate, NotMergeable
+from projectq.ops import BasicMathGate2, NotMergeable
 
 
-class AdditionGate(BasicMathGate):
-    def __init__(self):
-        BasicMathGate.__init__(self, lambda x, y: (x, y + x))
+class AdditionGate(BasicMathGate2):
+    def do_operation(self, x, y):
+        return x, y + x
 
     def get_inverse(self):
         return SubtractionGate()
@@ -24,9 +24,9 @@ class AdditionGate(BasicMathGate):
         return ['A', '+A']
 
 
-class SubtractionGate(BasicMathGate):
-    def __init__(self):
-        BasicMathGate.__init__(self, lambda x, y: (x, y - x))
+class SubtractionGate(BasicMathGate2):
+    def do_operation(self, x, y):
+        return x, y - x
 
     def get_inverse(self):
         return AdditionGate()

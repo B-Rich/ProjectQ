@@ -90,7 +90,7 @@ def test_fuzz_subtract_into_large():
         n = random.randint(1, 15)
         e = random.randint(1, 15)
         fuzz_permutation_against_circuit(
-            register_sizes=[n, n + e, 1],
+            register_sizes=[n, n + e, 2],
             outputs_for_input=lambda a, b, d: (a, b - a, d),
             engine_list=[
                 AutoReplacer(DecompositionRuleSet(modules=[

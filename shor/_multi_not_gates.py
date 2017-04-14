@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from projectq.ops import BasicMathGate, NotMergeable
+from projectq.ops import BasicMathGate2, NotMergeable
 
 
-class MultiNotGate(BasicMathGate):
-    def __init__(self):
-        BasicMathGate.__init__(self, lambda x: (~x,))
+class MultiNotGate(BasicMathGate2):
+    def do_operation(self, x):
+        return ~x,
 
     def get_merged(self, other):
         raise NotMergeable()

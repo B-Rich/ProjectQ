@@ -423,3 +423,16 @@ class BasicMathGate(BasicGate):
                 gate. (See BasicMathGate.__init__ for an example).
         """
         return self._math_function
+
+
+class BasicMathGate2(BasicMathGate):
+    def __init__(self):
+        def do_not_call(*_):
+            raise AssertionError()
+        BasicMathGate.__init__(self, do_not_call)
+
+    def do_operation(self, *args):
+        raise NotImplementedError()
+
+    def get_math_function(self, qubits):
+        return lambda x: self.do_operation(*x)

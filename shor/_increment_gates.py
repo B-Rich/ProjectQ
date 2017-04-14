@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from projectq.ops import BasicMathGate, NotMergeable
+from projectq.ops import BasicMathGate2, NotMergeable
 
 
-class IncrementGate(BasicMathGate):
-    def __init__(self):
-        BasicMathGate.__init__(self, lambda x: (x + 1,))
+class IncrementGate(BasicMathGate2):
+    def do_operation(self, x):
+        return x + 1,
 
     def get_inverse(self):
         return DecrementGate()
@@ -24,9 +24,9 @@ class IncrementGate(BasicMathGate):
         return ['+1']
 
 
-class DecrementGate(BasicMathGate):
-    def __init__(self):
-        BasicMathGate.__init__(self, lambda x: (x - 1,))
+class DecrementGate(BasicMathGate2):
+    def do_operation(self, x):
+        return x - 1,
 
     def get_inverse(self):
         return IncrementGate()
@@ -42,6 +42,7 @@ class DecrementGate(BasicMathGate):
 
     def ascii_register_labels(self):
         return ['−1']
+
 
 Increment = IncrementGate()
 Decrement = DecrementGate()

@@ -15,9 +15,12 @@ from projectq.ops import X
 def fuzz_permutation_against_circuit(register_sizes,
                                      outputs_for_input,
                                      engine_list,
-                                     actions):
+                                     actions,
+                                     register_limits=None):
     n = len(register_sizes)
-    inputs = [random.randint(0, (1 << size) - 1) for size in register_sizes]
+    if register_limits is None:
+        register_limits = [1 << size for size in register_sizes]
+    inputs = [random.randint(0, limit - 1) for limit in register_limits]
     outputs = [e % (1 << d)
                for e, d in zip(outputs_for_input(*inputs), register_sizes)]
 

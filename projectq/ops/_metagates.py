@@ -238,6 +238,9 @@ class ManyControlledGate(BasicGate):
         return ControlledGate(self._gate.get_inverse())
 
     def generate_commands(self, qubits):
+        if len(qubits) != 2:
+            raise ValueError(
+                "ManyControlledGate takes a len-2 (controls, rest) tuple.")
         controls = qubits[0]
         rest = qubits[1]
         return [cmd.with_extra_control_qubits(controls)
