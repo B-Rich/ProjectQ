@@ -19,7 +19,7 @@ from . import (
 from ._addition_decompositions import (
     do_addition_with_same_size_and_no_controls
 )
-from ._addition_gates import Add
+from ._addition_gates import Add, Subtract
 from ._test_util import fuzz_permutation_against_circuit
 
 
@@ -51,6 +51,24 @@ def test_exact_commands_for_small_circuit():
     ] for cmd in cmds]
 
 
+def test_decompose_big_to_toffolis():
+    backend = DummyEngine(save_commands=True)
+    eng = MainEngine(backend=backend,engine_list=[
+        AutoReplacer(DecompositionRuleSet(modules=[
+            swap2cnot,
+            _multi_not_decompositions,
+            _addition_decompositions,
+            _increment_decompositions
+        ])),
+        LimitedCapabilityEngine(allow_nots_with_many_controls=True),
+    ])
+    src = eng.allocate_qureg(50)
+    dst = eng.allocate_qureg(100)
+    Add | (src, dst)
+
+    assert 1000 < len(backend.received_commands) < 10000
+
+
 def test_fuzz_add_same_size():
     for _ in range(10):
         n = random.randint(1, 100)
@@ -67,13 +85,13 @@ def test_fuzz_add_same_size():
             actions=lambda eng, regs: Add | (regs[0], regs[1]))
 
 
-def test_fuzz_add_into_large():
+def test_fuzz_subtract_into_large():
     for _ in range(10):
-        n = random.randint(1, 100)
-        e = random.randint(1, 100)
+        n = random.randint(1, 15)
+        e = random.randint(1, 15)
         fuzz_permutation_against_circuit(
             register_sizes=[n, n + e, 1],
-            outputs_for_input=lambda a, b, d: (a, b + a, d),
+            outputs_for_input=lambda a, b, d: (a, b - a, d),
             engine_list=[
                 AutoReplacer(DecompositionRuleSet(modules=[
                     swap2cnot,
@@ -82,4 +100,4 @@ def test_fuzz_add_into_large():
                     _increment_decompositions
                 ])),
                 LimitedCapabilityEngine(allow_toffoli=True)],
-            actions=lambda eng, regs: Add | (regs[0], regs[1]))
+            actions=lambda eng, regs: Subtract | (regs[0], regs[1]))

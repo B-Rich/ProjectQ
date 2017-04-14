@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-from projectq.types import Qureg
+from fractions import Fraction
+
 from projectq.meta import Control, Dagger
 from projectq.ops import X, Swap
-import math
-from fractions import Fraction
+from projectq.types import Qureg
 
 
 def sample_period(eng,

@@ -128,15 +128,19 @@ class LimitedCapabilityEngine(BasicEngine):
     An engine that restricts the available operations, on top of any
     restrictions for later engines.
 
-    Only commands that meet as least one of the criteria given to the
-    constructor (and criteria of underlying engines) are considered available.
+    Only commands that meet as least one of the 'allow' criteria and NONE of
+    the 'ban' criteria given to the constructor are considered available. Also
+    gates are not considered available if the underlying engine can't receive
+    them.
     """
     def __init__(self,
                  allow_classical_instructions=True,
+                 allow_all=False,
                  allow_toffoli=False,
                  allow_nots_with_many_controls=False,
                  allow_single_qubit_gates=False,
-                 allow_classes=()):
+                 allow_classes=(),
+                 ban_classes=()):
         """
         Constructs a LimitedCapabilityEngine that accepts commands based on
         the given criteria arguments.
@@ -144,6 +148,10 @@ class LimitedCapabilityEngine(BasicEngine):
         Note that a command is accepted if it meets *any* criteria.
 
         Args:
+            allow_all (bool):
+                Defaults to allowing all commands.
+                Any ban criteria will override this default.
+
             allow_classical_instructions (bool):
                 Enabled by default. Marks classical instruction commands like
                 'Allocate', 'Flush', etc as available.
@@ -157,21 +165,36 @@ class LimitedCapabilityEngine(BasicEngine):
             allow_single_qubit_gates (bool):
                 Allows gates that affect only a single qubit
                 (counting controls).
+
+            allow_classes (list[type]):
+                Allows any gates matching the given class.
+
+            ban_classes (list[type]):
+                Bans any gates matching the given class.
         """
         BasicEngine.__init__(self)
+        self.allow_all = allow_all
         self.allow_nots_with_many_controls = allow_nots_with_many_controls
         self.allow_single_qubit_gates = allow_single_qubit_gates
         self.allow_toffoli = allow_toffoli
         self.allow_classical_instructions = allow_classical_instructions
         self.allowed_classes = tuple(allow_classes)
+        self.ban_classes = tuple(ban_classes)
 
     def is_available(self, cmd):
         return (self._allow_command(cmd) and
+                not self._ban_command(cmd) and
                 (self.is_last_engine or self.next_engine.is_available(cmd)))
 
     def receive(self, command_list):
         if not self.is_last_engine:
             self.send(command_list)
+
+    def _ban_command(self, cmd):
+        if any(isinstance(cmd.gate, c) for c in self.ban_classes):
+            return True
+
+        return False
 
     def _allow_command(self, cmd):
         if (self.allow_classical_instructions and
@@ -191,4 +214,4 @@ class LimitedCapabilityEngine(BasicEngine):
         if any(isinstance(cmd.gate, c) for c in self.allowed_classes):
             return True
 
-        return False
+        return self.allow_all

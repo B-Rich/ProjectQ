@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 from collections import defaultdict
 
-from projectq.ops import Command, Allocate, Deallocate, Swap, XGate, FlushGate
+from projectq.ops import Command, Allocate, Deallocate, SwapGate, XGate, FlushGate
 
 
 def _between_wire_pattern(cur_role, next_role):
@@ -107,7 +107,7 @@ def _labels_border(cmd):
         return ['|0⟩'], False
     if cmd.gate is Deallocate:
         return ['┤  '], False
-    if cmd.gate is Swap:
+    if isinstance(cmd.gate, SwapGate):
         return ['×', '×'], False
     if isinstance(cmd.gate, XGate):
         return ['⊕'], False

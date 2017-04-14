@@ -146,10 +146,10 @@ def do_addition_with_larger_target_and_no_controls(input_reg, target_reg):
     cswap = C(Swap)
 
     # (1) Dirty MSB correction.
-    C(Decrement) | (carry_bit, input_reg[:-1] + target_reg)
+    C(Decrement) | (carry_bit, target_reg)
 
     # (2) Handle MSB separately.
-    C(Increment) | (carry_bit, target_reg)
+    C(Increment) | (carry_bit, target_reg[n-1:])
 
     # (3) Ripple forward.
     for i in range(n - 1):
@@ -157,7 +157,7 @@ def do_addition_with_larger_target_and_no_controls(input_reg, target_reg):
         cswap | (target_reg[i], carry_bit, input_reg[i])
 
     # (4) Carry into high output bits.
-    cnot | (carry_bit, target_reg[n-1:])
+    C(Increment) | (carry_bit, target_reg[n-1:])
 
     # (5) Ripple backward.
     for i in range(n - 1)[::-1]:
@@ -190,17 +190,17 @@ def do_addition(input_reg, target_reg, dirty, controls):
 all_defined_decomposition_rules = [
     DecompositionRule(
         gate_class=AdditionGate,
+        gate_decomposer=lambda cmd: do_addition_no_controls(
+            input_reg=cmd.qubits[0],
+            target_reg=cmd.qubits[1]),
+        max_controls=0),
+
+    DecompositionRule(
+        gate_class=AdditionGate,
         gate_decomposer=lambda cmd: do_addition(
             input_reg=cmd.qubits[0],
             target_reg=cmd.qubits[1],
             controls=cmd.control_qubits,
             dirty=cmd.untouched_qubits()[0]),
         min_allocated_but_untouched_bits=1),
-
-    DecompositionRule(
-        gate_class=AdditionGate,
-        gate_decomposer=lambda cmd: do_addition_no_controls(
-            input_reg=cmd.qubits[0],
-            target_reg=cmd.qubits[1]),
-        max_controls=0),
 ]
