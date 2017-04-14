@@ -107,7 +107,30 @@ class AutoReplacer(BasicEngine):
         """
         BasicEngine.__init__(self)
         self._decomp_chooser = decomposition_chooser
-        self.decompositionRuleSet = decomposition_rule_set
+        self.decomposition_rule_set = decomposition_rule_set
+
+    def _find_and_choose_decomposition_for(self, cmd):
+        # Find potentially-applicable decompositions by gate type.
+        cls = cmd.gate.__class__.__name__
+        decomps = [d for d in self.decomposition_rule_set.decompositions[cls]]
+
+        # Find potentially-applicable inverse decompositions by gate type.
+        inv_cls = get_inverse(cmd.gate).__class__.__name__
+        inv_decomps = [
+            d.get_inverse_decomposition()
+            for d in self.decomposition_rule_set.decompositions[inv_cls]
+        ]
+
+        # Do detailed checking of whether decompositions are applicable.
+        decomp_list = [d for d in decomps + inv_decomps if d.check(cmd)]
+
+        # We need at least one workable decomposition!
+        if not decomp_list:
+            raise NoGateDecompositionError(
+                "No replacement found for " + str(cmd) + "!")
+
+        # Pick the best one with our decomposition chooser.
+        return self._decomp_chooser(cmd, decomp_list)
 
     def _process_command(self, cmd):
         """
@@ -125,37 +148,7 @@ class AutoReplacer(BasicEngine):
             self.send([cmd])
             return
 
-        # check for decomposition rules
-        potential_decomps = []
-        inv_list = []
-
-        # check for forward rules
-        cls = cmd.gate.__class__.__name__
-        try:
-            potential_decomps = [
-                d for d in self.decompositionRuleSet.decompositions[cls]
-            ]
-        except KeyError:
-            pass
-        # check for rules implementing the inverse gate
-        # and run them in reverse
-        inv_cls = get_inverse(cmd.gate).__class__.__name__
-        try:
-            potential_decomps += [
-                d.get_inverse_decomposition()
-                for d in self.decompositionRuleSet.decompositions[inv_cls]
-            ]
-        except KeyError:
-            pass
-        # throw out the ones which don't recognize the command
-        decomp_list = [d for d in potential_decomps if d.check(cmd)]
-
-        if len(decomp_list) == 0:
-            raise NoGateDecompositionError("\nNo replacement found for "
-                                           + str(cmd) + "!")
-
-        # use decomposition chooser to determine the best decomposition
-        chosen_decomp = self._decomp_chooser(cmd, decomp_list)
+        chosen_decomp = self._find_and_choose_decomposition_for(cmd)
 
         # the decomposed command must have the same tags
         # (plus the ones it gets from meta-statements inside the

@@ -2,11 +2,17 @@
 from __future__ import division
 from __future__ import unicode_literals
 
+import random
+
 from projectq import MainEngine
 from projectq.cengines import DummyEngine, AutoReplacer, DecompositionRuleSet
 from projectq.ops import Allocate, Swap, X, C
 from projectq.setups.decompositions import swap2cnot
-from ._addition_decompositions import do_addition_with_same_size_and_no_controls
+from . import _multi_not_decompositions, _addition_decompositions
+from ._addition_decompositions import (
+    do_addition_with_same_size_and_no_controls
+)
+from ._addition_gates import Add
 from ._test_util import fuzz_permutation_against_circuit
 
 
@@ -38,16 +44,15 @@ def test_exact_commands_for_small_circuit():
     ] for cmd in cmds]
 
 
-def test_equivalence_to_expected_permutation_by_fuzzing():
+def test_fuzz_add():
     for _ in range(10):
+        n = random.randint(1, 100)
         fuzz_permutation_against_circuit(
-            register_sizes=[4, 4],
+            register_sizes=[n, n],
             outputs_for_input=lambda a, b: (a, b + a),
             engine_list=[AutoReplacer(DecompositionRuleSet(modules=[
-                swap2cnot
+                swap2cnot,
+                _multi_not_decompositions,
+                _addition_decompositions
             ]))],
-            actions=lambda eng, regs:
-                do_addition_with_same_size_and_no_controls(
-                    eng,
-                    input_reg=regs[0],
-                    target_reg=regs[1]))
+            actions=lambda eng, regs: Add | (regs[0], regs[1]))

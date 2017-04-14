@@ -124,16 +124,46 @@ class DummyEngine(BasicEngine):
 
 
 class LimitedCapabilityEngine(BasicEngine):
+    """
+    An engine that restricts the available operations, on top of any
+    restrictions for later engines.
+
+    Only commands that meet as least one of the criteria given to the
+    constructor (and criteria of underlying engines) are considered available.
+    """
     def __init__(self,
                  allow_classical_instructions=True,
                  allow_toffoli=False,
                  allow_nots_with_many_controls=False,
-                 allow_single_qubit_gates=False):
+                 allow_single_qubit_gates=False,
+                 allow_classes=()):
+        """
+        Constructs a LimitedCapabilityEngine that accepts commands based on
+        the given criteria arguments.
+
+        Note that a command is accepted if it meets *any* criteria.
+
+        Args:
+            allow_classical_instructions (bool):
+                Enabled by default. Marks classical instruction commands like
+                'Allocate', 'Flush', etc as available.
+
+            allow_toffoli (bool):
+                Allows NOT gates with at most 2 controls.
+
+            allow_nots_with_many_controls (bool):
+                Allows NOT gates with arbitrarily many controls.
+
+            allow_single_qubit_gates (bool):
+                Allows gates that affect only a single qubit
+                (counting controls).
+        """
         BasicEngine.__init__(self)
         self.allow_nots_with_many_controls = allow_nots_with_many_controls
         self.allow_single_qubit_gates = allow_single_qubit_gates
         self.allow_toffoli = allow_toffoli
         self.allow_classical_instructions = allow_classical_instructions
+        self.allowed_classes = tuple(allow_classes)
 
     def is_available(self, cmd):
         return (self._allow_command(cmd) and
@@ -156,6 +186,9 @@ class LimitedCapabilityEngine(BasicEngine):
             return True
 
         if self.allow_nots_with_many_controls and isinstance(cmd.gate, XGate):
+            return True
+
+        if any(isinstance(cmd.gate, c) for c in self.allowed_classes):
             return True
 
         return False

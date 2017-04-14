@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
 from projectq.cengines import DecompositionRule
-from projectq.ops import X, All, C_star
+from projectq.ops import X, C_star
 from ._addition_gates import Add, Subtract
 from ._increment_gates import IncrementGate
+from ._multi_not_gates import MultiNot
 
 
 def do_increment_with_no_controls_and_n_dirty(eng, target_reg, dirty_reg):
@@ -47,9 +48,9 @@ def do_increment_with_no_controls_and_n_dirty(eng, target_reg, dirty_reg):
     dirty_reg = dirty_reg[:len(target_reg)]
 
     Subtract | (dirty_reg, target_reg)
-    All(X) | dirty_reg
+    MultiNot | dirty_reg
     Subtract | (dirty_reg, target_reg)
-    All(X) | dirty_reg
+    MultiNot | dirty_reg
 
 
 def do_increment_with_1_dirty(eng, target_reg, dirty_qubit, controls):
@@ -86,7 +87,7 @@ def do_increment_with_1_dirty(eng, target_reg, dirty_qubit, controls):
     if len(target_reg) & 1 == 0:
         do_increment_with_1_dirty(
             eng, target_reg[1:], dirty_qubit, controls + [target_reg[0]])
-        X | target_reg[0]
+        C_star(X) | (controls, target_reg[0])
         return
 
     h = (len(target_reg) + 1) // 2
@@ -95,27 +96,27 @@ def do_increment_with_1_dirty(eng, target_reg, dirty_qubit, controls):
 
     # Increment high bits, conditioned on low bits wrapping.
     Subtract | (a, b)
-    C_star(All(X)) | (controls + a, b)
+    C_star(MultiNot) | (controls + a, b)
     Add | (a, b)
-    C_star(All(X)) | (controls + a, b)
+    C_star(MultiNot) | (controls + a, b)
 
     # Increment low bits.
-    C_star(All(X)) | (controls, a + b)
-    Subtract | (b, a)
-    C_star(All(X)) | (controls, a + b)
+    C_star(MultiNot) | (controls, a + b)
     Add | (b, a)
+    C_star(MultiNot) | (controls, a + b)
+    Subtract | (b, a)
 
 
 all_defined_decomposition_rules = [
-    # DecompositionRule(
-    #     gate_class=IncrementGate,
-    #     gate_decomposer=lambda cmd: do_increment_with_no_controls_and_n_dirty(
-    #         cmd.engine,
-    #         target_reg=cmd.qubits[0],
-    #         dirty_reg=cmd.untouched_qubits()),
-    #     max_controls=0,
-    #     custom_predicate=lambda cmd:
-    #         len(cmd.untouched_qubits()) >= len(cmd.qubits[0])),
+    DecompositionRule(
+        gate_class=IncrementGate,
+        gate_decomposer=lambda cmd: do_increment_with_no_controls_and_n_dirty(
+            cmd.engine,
+            target_reg=cmd.qubits[0],
+            dirty_reg=cmd.untouched_qubits()),
+        max_controls=0,
+        custom_predicate=lambda cmd:
+            len(cmd.untouched_qubits()) >= len(cmd.qubits[0])),
 
     DecompositionRule(
         gate_class=IncrementGate,
@@ -124,6 +125,6 @@ all_defined_decomposition_rules = [
             target_reg=cmd.qubits[0],
             dirty_qubit=cmd.untouched_qubits()[0],
             controls=cmd.control_qubits),
-    #    min_allocated_but_untouched_bits=1,
+        min_allocated_but_untouched_bits=1,
     ),
 ]

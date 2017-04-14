@@ -110,6 +110,7 @@ class MainEngine(BasicEngine):
                         "E.g. MainEngine(engine_list=[AutoReplacer]) instead "
                         "of\n     MainEngine(engine_list=[AutoReplacer()])")
 
+        engine_list = list(engine_list)
         engine_list.append(backend)
         self.backend = backend
 

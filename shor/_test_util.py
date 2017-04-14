@@ -1,46 +1,48 @@
 # -*- coding: utf-8 -*-
 from __future__ import division
+from __future__ import print_function
 from __future__ import unicode_literals
 
 import random
 
-from projectq.cengines import DummyEngine
-
 from projectq import MainEngine
-from projectq.backends import Simulator
-from projectq.ops import X
+from projectq.backends import ClassicalSimulator
 from projectq.backends._circuits._to_ascii import commands_to_ascii_circuit
+from projectq.cengines import DummyEngine
+from projectq.ops import X
 
 
 def fuzz_permutation_against_circuit(register_sizes,
                                      outputs_for_input,
                                      engine_list,
                                      actions):
-    inputs = [random.randint(0, (1 << n) - 1) for n in register_sizes]
+    n = len(register_sizes)
+    inputs = [random.randint(0, (1 << size) - 1) for size in register_sizes]
     outputs = [e % (1 << d)
                for e, d in zip(outputs_for_input(*inputs), register_sizes)]
 
-    backend = Simulator()
+    backend = ClassicalSimulator()
     eng = MainEngine(backend=backend, engine_list=engine_list)
 
     # Encode inputs.
-    registers = [eng.allocate_qureg(n) for n in register_sizes]
-    for i in range(len(register_sizes)):
+    registers = [eng.allocate_qureg(size) for size in register_sizes]
+    for i in range(n):
         for b in range(register_sizes[i]):
             if inputs[i] & (1 << b):
                 X | registers[i][b]
 
     # Simulate.
     actions(eng, registers)
-    eng.flush()
 
     # Compare outputs.
-    _, state = backend.cheat()
-    expected_output_state = 0
-    for output, size in reversed(zip(outputs, register_sizes)):
-        expected_output_state <<= size
-        expected_output_state |= output
-    assert state[expected_output_state] == 1
+    actual_outputs = [backend.read_register(registers[i]) for i in range(n)]
+    if outputs != actual_outputs:
+        print(actions_as_ascii_diagram(register_sizes, engine_list, actions))
+        print("Register Sizes", register_sizes)
+        print("Inputs", inputs)
+        print("Expected Outputs", outputs)
+        print("Actual Outputs", actual_outputs)
+    assert outputs == actual_outputs
 
 
 def actions_as_ascii_diagram(register_sizes, engine_list, actions):

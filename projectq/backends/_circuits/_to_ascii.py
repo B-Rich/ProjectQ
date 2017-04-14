@@ -54,7 +54,13 @@ def _between_wire_cols(has_controls, used_indices, roles, index_to_id, w,
     return between_wires
 
 
-def _on_wire_cols(labels, has_controls, used_indices, roles, index_to_id, w,
+def _on_wire_cols(labels,
+                  has_controls,
+                  used_indices,
+                  roles,
+                  notes,
+                  index_to_id,
+                  w,
                   border):
     label_positions = {}
     for i in range(len(labels)):
@@ -71,6 +77,7 @@ def _on_wire_cols(labels, has_controls, used_indices, roles, index_to_id, w,
     on_wires = []
     for i in range(len(index_to_id)):
         role = roles[index_to_id[i]]
+        notes_here = notes[index_to_id[i]]
         if not border and i in label_positions:
             on_wires.append(label_positions[i])
             continue
@@ -88,6 +95,8 @@ def _on_wire_cols(labels, has_controls, used_indices, roles, index_to_id, w,
         w1 = spacing_w // 2
         w2 = spacing_w - w1
         center = space * w1 + mid + space * w2
+        if border and notes_here:
+            center = str(notes_here[0]) + center[1:]
         full = pattern[0] + center + pattern[3] if border else center
         on_wires.append(full)
     return on_wires
@@ -111,6 +120,7 @@ def _labels_border(cmd):
 
 def _wire_col(cmd, id_to_index, index_to_id):
     roles = defaultdict(set)
+    notes = defaultdict(list)
 
     used_indices = [id_to_index[c.id]
                     for reg in cmd.all_qubits
@@ -119,12 +129,16 @@ def _wire_col(cmd, id_to_index, index_to_id):
     for c in cmd.control_qubits:
         roles[c.id].add('control')
     for i in range(len(cmd.qubits)):
-        for q in cmd.qubits[i]:
+        m = min(q.id for q in cmd.qubits[i])
+        for j in range(len(cmd.qubits[i])):
+            q = cmd.qubits[i][j]
             roles[q.id].add('register')
             roles[q.id].add('register' + str(i))
+            if id_to_index[q.id] - j != m:
+                notes[q.id].append(str(j))
 
     labels, border = _labels_border(cmd)
-    w = max(len(e) for e in labels) + (4 if border else 0)
+    w = max(len(e) for e in labels) + (6 if border else 0)
 
     between_wires = _between_wire_cols(len(cmd.control_qubits) > 0,
                                        used_indices,
@@ -136,6 +150,7 @@ def _wire_col(cmd, id_to_index, index_to_id):
                              len(cmd.control_qubits) > 0,
                              used_indices,
                              roles,
+                             notes,
                              index_to_id,
                              w,
                              border)

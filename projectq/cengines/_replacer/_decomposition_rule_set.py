@@ -9,6 +9,7 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
+from collections import defaultdict
 
 from projectq.meta import Dagger
 from . import DecompositionRule
@@ -26,7 +27,7 @@ class DecompositionRuleSet:
                 things with an "all_defined_decomposition_rules" property
                 containing decomposition rules to add to the rule set.
         """
-        self.decompositions = dict()
+        self.decompositions = defaultdict(list)
 
         if rules:
             self.add_decomposition_rules(rules)
@@ -51,8 +52,6 @@ class DecompositionRuleSet:
         decomp_obj = _Decomposition(rule.gate_decomposer,
                                     rule.can_apply_to_command)
         cls = rule.gate_class.__name__
-        if cls not in self.decompositions:
-            self.decompositions[cls] = []
         self.decompositions[cls].append(decomp_obj)
 
 
