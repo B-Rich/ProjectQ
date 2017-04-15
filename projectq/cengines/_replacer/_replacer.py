@@ -172,7 +172,8 @@ class AutoReplacer(BasicEngine):
         cmd.engine = forwarder_eng  # send gates directly to forwarder
         # (and not to main engine, which would screw up the ordering).
 
-        chosen_decomp.decompose(cmd)  # run the decomposition
+        with forwarder_eng.pipe_operations_into_receive():
+            chosen_decomp.decompose(cmd)  # run the decomposition
 
     def receive(self, command_list):
         """

@@ -33,7 +33,21 @@ import math
 from copy import deepcopy
 
 from projectq.types import BasicQubit, Qubit, Qureg
-from ._command import Command, apply_command
+from ._command import Command
+
+
+_engine_contexts = []
+
+
+class PipeIntoEngineContext:
+    def __init__(self, engine):
+        self.engine = engine
+
+    def __enter__(self):
+        _engine_contexts.append(self.engine)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        _engine_contexts.pop()
 
 
 class NotMergeable(Exception):
@@ -194,8 +208,10 @@ class BasicGate(object):
             qubits: a Qubit object, a list of Qubit objects, a Qureg object, or
                     a tuple of Qubit or Qureg objects (can be mixed).
         """
-        for cmd in self.generate_commands(qubits):
-            apply_command(cmd)
+        if not _engine_contexts:
+            raise EnvironmentError("Forgot `with PipeIntoEngineContext(eng)`.")
+        eng = _engine_contexts[-1]
+        eng.receive(self.generate_commands(qubits))
 
     def __eq__(self, other):
         """ Return True if equal (i.e., instance of same class). """
@@ -220,6 +236,12 @@ class PreControlledGate(BasicGate):
     def generate_commands(self, qubits):
         return [cmd.with_extra_control_qubits(self._controls)
                 for cmd in self._gate.generate_commands(qubits)]
+
+    def __str__(self):
+        return str(self._gate) + " & " + str([q.id for q in self._controls])
+
+    def __repr__(self):
+        return repr(self._gate) + " & " + repr([q for q in self._controls])
 
     def __eq__(self, other):
         return (isinstance(other, PreControlledGate) and

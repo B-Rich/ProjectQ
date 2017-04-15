@@ -7,7 +7,6 @@ from projectq.cengines import (DummyEngine,
                                AutoReplacer,
                                DecompositionRuleSet,
                                LimitedCapabilityEngine)
-from projectq.ops import C_star
 from . import (
     _const_modular_double_multiplication_decompositions
 )
@@ -32,17 +31,18 @@ def test_do_double_multiplication():
     c = eng.allocate_qureg(3)
 
     backend.restart_recording()
-    do_double_multiplication(
-        ConstModularDoubleMultiplicationGate(3, 13), a, b, c)
+    with eng.pipe_operations_into_receive():
+        do_double_multiplication(
+            ConstModularDoubleMultiplicationGate(3, 13), a, b, c)
 
     m = ModularScaledAdditionGate
     assert backend.received_commands == [cmd for cmds in [
-        C_star(m(3, 13)).generate_commands((c, (a, b))),
-        C_star(m(4, 13)).generate_commands((c, (b, a))),
-        C_star(m(3, 13)).generate_commands((c, (a, b))),
-        C_star(ModularAdditionGate(13)).generate_commands((c, (b, a))),
-        C_star(ModularSubtractionGate(13)).generate_commands((c, (a, b))),
-        C_star(ModularAdditionGate(13)).generate_commands((c, (b, a))),
+        (m(3, 13) & c).generate_commands((a, b)),
+        (m(4, 13) & c).generate_commands((b, a)),
+        (m(3, 13) & c).generate_commands((a, b)),
+        (ModularAdditionGate(13) & c).generate_commands((b, a)),
+        (ModularSubtractionGate(13) & c).generate_commands((a, b)),
+        (ModularAdditionGate(13) & c).generate_commands((b, a)),
     ] for cmd in cmds]
 
 
@@ -69,7 +69,7 @@ def test_fuzz_double_multiplication():
         n = 10
         cn = 1
         mod = 1001
-        op = C_star(ConstModularDoubleMultiplicationGate(5, mod))
+        op = ConstModularDoubleMultiplicationGate(5, mod)
         fuzz_permutation_against_circuit(
             register_sizes=[n, cn, n],
             register_limits=[mod, 1 << cn, mod],
@@ -87,4 +87,4 @@ def test_fuzz_double_multiplication():
                     ban_classes=[ConstModularDoubleMultiplicationGate]
                 )
             ],
-            actions=lambda eng, regs: op | (regs[1], (regs[0], regs[2])))
+            actions=lambda eng, regs: op & regs[1] | (regs[0], regs[2]))

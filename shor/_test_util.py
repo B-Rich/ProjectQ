@@ -26,16 +26,17 @@ def fuzz_permutation_against_circuit(register_sizes,
 
     backend = ClassicalSimulator()
     eng = MainEngine(backend=backend, engine_list=engine_list)
-
-    # Encode inputs.
     registers = [eng.allocate_qureg(size) for size in register_sizes]
-    for i in range(n):
-        for b in range(register_sizes[i]):
-            if inputs[i] & (1 << b):
-                X | registers[i][b]
 
-    # Simulate.
-    actions(eng, registers)
+    with eng.pipe_operations_into_receive():
+        # Encode inputs.
+        for i in range(n):
+            for b in range(register_sizes[i]):
+                if inputs[i] & (1 << b):
+                    X | registers[i][b]
+
+        # Simulate.
+        actions(eng, registers)
 
     # Compare outputs.
     actual_outputs = [backend.read_register(registers[i]) for i in range(n)]
@@ -52,6 +53,7 @@ def actions_as_ascii_diagram(register_sizes, engine_list, actions):
     backend = DummyEngine(save_commands=True)
     eng = MainEngine(backend=backend, engine_list=engine_list)
     registers = [eng.allocate_qureg(n) for n in register_sizes]
-    actions(eng, registers)
+    with eng.pipe_operations_into_receive():
+        actions(eng, registers)
     eng.flush()
     return commands_to_ascii_circuit(backend.received_commands)

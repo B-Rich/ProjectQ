@@ -12,7 +12,7 @@
 
 from projectq.ops import Allocate, Deallocate
 from projectq.types import Qubit, Qureg
-from projectq.ops import Command
+from projectq.ops import Command, PipeIntoEngineContext
 import projectq.cengines
 
 
@@ -141,6 +141,15 @@ class BasicEngine(object):
                 Qureg of length n, a list of n newly allocated qubits.
         """
         return Qureg([self.allocate_qubit()[0] for _ in range(n)])
+
+    def pipe_operations_into_receive(self):
+        """
+        Returns:
+            PipeIntoEngineContext:
+                An object that, when given to a `with` block, scopes gate
+                __or__ operations with that block to pass into this engine.
+        """
+        return PipeIntoEngineContext(self)
 
     def deallocate_qubit(self, qubit):
         """

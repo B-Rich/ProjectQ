@@ -18,7 +18,8 @@ from ._basics import (NotMergeable,
                       ClassicalInstructionGate,
                       FastForwardingGate,
                       BasicMathGate,
-                      BasicMathGate2)
+                      BasicMathGate2,
+                      PipeIntoEngineContext)
 from ._command import apply_command, Command
 from ._metagates import (DaggeredGate,
                          get_inverse,

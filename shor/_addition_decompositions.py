@@ -2,9 +2,10 @@
 from __future__ import unicode_literals
 
 from projectq.cengines import DecompositionRule
-from projectq.ops import X, Swap, All, C, C_star
+from projectq.ops import X, Swap
 from ._addition_gates import AdditionGate
 from ._increment_gates import Increment, Decrement
+from ._multi_not_gates import MultiNot
 
 
 def do_addition_with_same_size_and_no_controls(input_reg, target_reg):
@@ -47,7 +48,6 @@ def do_addition_with_same_size_and_no_controls(input_reg, target_reg):
        └───┘
                    (1)  --------(2)-------  (3)  --------(4)-------  (5)
     Args:
-        eng (projectq.cengines.BasicEngine): Engine.
         input_reg (projectq.types.Qureg):
             The source register. Used as workspace, but ultimately not affected
             by the operation.
@@ -62,28 +62,25 @@ def do_addition_with_same_size_and_no_controls(input_reg, target_reg):
         return
 
     carry_bit = input_reg[-1]
-    cnot = C(X)
-    cnots = C(All(X))
-    cswap = C(Swap)
 
     # (1) Dirty MSB correction.
-    cnots | (carry_bit, (input_reg[:-1] + target_reg)[::-1])
+    MultiNot & carry_bit | (input_reg[:-1] + target_reg)[::-1]
 
     # (2) Ripple forward.
     for i in range(n - 1):
-        cnot | (carry_bit, target_reg[i])
-        cswap | (target_reg[i], carry_bit, input_reg[i])
+        X & carry_bit | target_reg[i]
+        Swap & target_reg[i] | (carry_bit, input_reg[i])
 
     # (3) High bit toggle.
-    cnot | (carry_bit, target_reg[-1])
+    X & carry_bit | target_reg[-1]
 
     # (4) Ripple backward.
     for i in range(n - 1)[::-1]:
-        cswap | (target_reg[i], carry_bit, input_reg[i])
-        cnot | (input_reg[i], target_reg[i])
+        Swap & target_reg[i] | (carry_bit, input_reg[i])
+        X & input_reg[i] | target_reg[i]
 
     # (5) Dirty MSB correction.
-    cnots | (carry_bit, input_reg[:-1] + target_reg)
+    MultiNot & carry_bit | (input_reg[:-1] + target_reg)
 
 
 def do_addition_with_larger_target_and_no_controls(input_reg, target_reg):
@@ -127,7 +124,6 @@ def do_addition_with_larger_target_and_no_controls(input_reg, target_reg):
        └───┘           └──┘  └──┘                      └──┘
                        (1)    (2)  -------(3)--------  (4)  --------(5)--------
     Args:
-        eng (projectq.cengines.BasicEngine): Engine.
         input_reg (projectq.types.Qureg):
             The source register. Used as workspace, but ultimately not affected
             by the operation.
@@ -142,27 +138,25 @@ def do_addition_with_larger_target_and_no_controls(input_reg, target_reg):
         return
 
     carry_bit = input_reg[-1]
-    cnot = C(X)
-    cswap = C(Swap)
 
     # (1) Dirty MSB correction.
-    C(Decrement) | (carry_bit, target_reg)
+    Decrement & carry_bit | target_reg
 
     # (2) Handle MSB separately.
-    C(Increment) | (carry_bit, target_reg[n-1:])
+    Increment & carry_bit | target_reg[n-1:]
 
     # (3) Ripple forward.
     for i in range(n - 1):
-        cnot | (carry_bit, target_reg[i])
-        cswap | (target_reg[i], carry_bit, input_reg[i])
+        X & carry_bit | target_reg[i]
+        Swap & target_reg[i] | (carry_bit, input_reg[i])
 
     # (4) Carry into high output bits.
-    C(Increment) | (carry_bit, target_reg[n-1:])
+    Increment & carry_bit | target_reg[n-1:]
 
     # (5) Ripple backward.
     for i in range(n - 1)[::-1]:
-        cswap | (target_reg[i], carry_bit, input_reg[i])
-        cnot | (input_reg[i], target_reg[i])
+        Swap & target_reg[i] | (carry_bit, input_reg[i])
+        X & input_reg[i] | target_reg[i]
 
 
 def do_addition_no_controls(input_reg, target_reg):
@@ -183,8 +177,8 @@ def do_addition(input_reg, target_reg, dirty, controls):
     expanded = [dirty] + target_reg
     for _ in range(2):
         do_addition_no_controls(input_reg, expanded)
-        C_star(All(X)) | (controls, expanded)
-        All(X) | expanded
+        MultiNot & controls | expanded
+        MultiNot | expanded
 
 
 all_defined_decomposition_rules = [

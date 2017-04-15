@@ -19,7 +19,7 @@ import weakref
 
 import projectq
 from projectq.cengines import BasicEngine
-from projectq.ops import Command, FlushGate
+from projectq.ops import Command, FlushGate, PipeIntoEngineContext
 from projectq.types import WeakQubitRef
 from projectq.backends import Simulator
 

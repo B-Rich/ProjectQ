@@ -9,7 +9,6 @@ from projectq.cengines import (LimitedCapabilityEngine,
                                AutoReplacer,
                                DecompositionRuleSet,
                                DummyEngine)
-from projectq.ops import C_star
 from projectq.setups.decompositions import swap2cnot
 from . import (_addition_decompositions,
                _increment_decompositions,
@@ -30,7 +29,8 @@ def test_do_increment_with_no_controls_and_n_dirty():
     dirty = eng.allocate_qureg(10)
     backend.restart_recording()
 
-    do_increment_with_no_controls_and_n_dirty(eng, target, dirty)
+    with eng.pipe_operations_into_receive():
+        do_increment_with_no_controls_and_n_dirty(eng, target, dirty)
 
     assert backend.received_commands == [cmd for cmds in [
         Subtract.generate_commands((dirty, target)),
@@ -71,7 +71,8 @@ def test_decomposition_chain():
     controls = eng.allocate_qureg(40)
     target = eng.allocate_qureg(35)
     _ = eng.allocate_qureg(2)
-    C_star(Increment) | (controls, target)
+    with eng.pipe_operations_into_receive():
+        Increment & controls | target
     assert 1000 < len(backend.received_commands) < 10000
 
 
@@ -93,4 +94,4 @@ def test_fuzz_controlled_increment():
                 ])),
                 LimitedCapabilityEngine(allow_toffoli=True),
             ],
-            actions=lambda eng, regs: C_star(Increment) | (regs[0], regs[1]))
+            actions=lambda eng, regs: Increment & regs[0] | regs[1])

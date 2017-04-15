@@ -27,18 +27,37 @@ def test_do_multi_not_with_one_big_not_and_friends():
     targets = eng.allocate_qureg(5)
     backend.restart_recording()
 
-    do_multi_not_with_one_big_not_and_friends(targets, controls)
+    with eng.pipe_operations_into_receive():
+        do_multi_not_with_one_big_not_and_friends(targets, controls)
 
     assert backend.received_commands == [cmd for cmds in [
         C(X).generate_commands((targets[3], targets[4])),
         C(X).generate_commands((targets[2], targets[3])),
         C(X).generate_commands((targets[1], targets[2])),
         C(X).generate_commands((targets[0], targets[1])),
-        C_star(X).generate_commands((controls, targets[0])),
+        (X & controls).generate_commands(targets[0]),
         C(X).generate_commands((targets[0], targets[1])),
         C(X).generate_commands((targets[1], targets[2])),
         C(X).generate_commands((targets[2], targets[3])),
         C(X).generate_commands((targets[3], targets[4])),
+    ] for cmd in cmds]
+
+
+def test_do_multi_not_with_one_big_not_and_friends_trivial():
+    backend = DummyEngine(save_commands=True)
+    eng = MainEngine(backend=backend, engine_list=[])
+    controls = eng.allocate_qureg(1)
+    targets = eng.allocate_qureg(4)
+    backend.restart_recording()
+
+    with eng.pipe_operations_into_receive():
+        do_multi_not_with_one_big_not_and_friends(targets, controls)
+
+    assert backend.received_commands == [cmd for cmds in [
+        (X & controls).generate_commands(targets[0]),
+        (X & controls).generate_commands(targets[1]),
+        (X & controls).generate_commands(targets[2]),
+        (X & controls).generate_commands(targets[3]),
     ] for cmd in cmds]
 
 
@@ -50,11 +69,12 @@ def test_cut_not_max_controls_in_half():
     dirty = eng.allocate_qureg(1)[0]
     backend.restart_recording()
 
-    cut_not_max_controls_in_half(target, controls, dirty)
+    with eng.pipe_operations_into_receive():
+        cut_not_max_controls_in_half(target, controls, dirty)
 
     assert backend.received_commands == [cmd for cmds in [
-        C_star(X).generate_commands((controls[4:], dirty)),
-        C_star(X).generate_commands((controls[:4] + [dirty], target)),
+        (X & controls[4:]).generate_commands(dirty),
+        (X & controls[:4] + [dirty]).generate_commands(target),
     ] for cmd in cmds] * 2
 
 
@@ -66,18 +86,9 @@ def test_cut_not_max_controls_into_toffolis():
     d = eng.allocate_qureg(2)
     backend.restart_recording()
 
-    cut_not_max_controls_into_toffolis(target, c, d)
+    with eng.pipe_operations_into_receive():
+        cut_not_max_controls_into_toffolis(target, c, d)
 
-    for e in backend.received_commands:
-        print(e)
-    print("-----------")
-    for e in [cmd for cmds in [
-        (X & d[1] & c[3]).generate_commands(target),
-        (X & d[0] & c[2]).generate_commands(d[1]),
-        (X & c[0] & c[1]).generate_commands(d[0]),
-        (X & d[0] & c[2]).generate_commands(d[1]),
-    ] for cmd in cmds] * 2:
-        print(e)
     assert backend.received_commands == [cmd for cmds in [
         (X & d[1] & c[3]).generate_commands(target),
         (X & d[0] & c[2]).generate_commands(d[1]),
@@ -96,7 +107,8 @@ def test_big_decomposition_chain_size():
     ])
     controls = eng.allocate_qureg(200)
     targets = eng.allocate_qureg(150)
-    C_star(MultiNot) | (controls, targets)
+    with eng.pipe_operations_into_receive():
+        MultiNot & controls | targets
     assert 200*4*2 <= len(backend.received_commands) <= 200*4*4
 
 

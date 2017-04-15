@@ -37,6 +37,12 @@ def do_multi_not_with_one_big_not_and_friends(targets, controls):
     if len(targets) == 0:
         return
 
+    # Don't bother with anything fancy if there's less than 2 controls.
+    if len(controls) <= 1:
+        for target in targets:
+            X & controls | target
+        return
+
     for i in reversed(range(len(targets) - 1)):
         X & targets[i] | targets[i + 1]
 
