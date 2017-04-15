@@ -1,3 +1,7 @@
+"""
+A simulator that only permits classical operations, for faster/easier testing.
+"""
+
 from projectq.cengines import BasicEngine
 from projectq.ops import (XGate,
                           BasicMathGate,
@@ -9,37 +13,37 @@ from projectq.ops import (XGate,
 
 class ClassicalSimulator(BasicEngine):
     """
-    A simulator that only permits NOT gates with controls.
+    A simple introspective simulator that only permits classical operations.
+
+    Allows allocation, deallocation, measuring (no-pop), flushing (no-op),
+    controls, NOTs, and any BasicMathGate. Supports reading/writing directly
+    from/to bits and registers of bits.
     """
     def __init__(self):
         BasicEngine.__init__(self)
         self._state = 0
         self._bit_positions = {}
 
-    def is_available(self, cmd):
-        return (cmd.gate == Measure or
-                cmd.gate == Allocate or
-                cmd.gate == Deallocate or
-                isinstance(cmd.gate, BasicMathGate) or
-                isinstance(cmd.gate, FlushGate) or
-                isinstance(cmd.gate, XGate))
-
     def read_bit(self, qubit):
         """
+        Reads a bit.
+
         Args:
-            qubit (projectq.types.Qubit):
+            qubit (projectq.types.Qubit): The bit to read.
 
         Returns:
-            int: 0 if off, 1 if on.
+            int: 0 if the target bit is off, 1 if it's on.
         """
         p = self._bit_positions[qubit.id]
         return (self._state >> p) & 1
 
     def write_bit(self, qubit, value):
         """
+        Resets/sets a bit to the given value.
+
         Args:
-            qubit (projectq.types.Qubit):
-            value (bool|int):
+            qubit (projectq.types.Qubit): The bit to write.
+            value (bool|int): Writes 1 if this value is truthy, else 0.
         """
         p = self._bit_positions[qubit.id]
         if value:
@@ -49,8 +53,11 @@ class ClassicalSimulator(BasicEngine):
 
     def read_register(self, qureg):
         """
+        Reads a group of bits as a little-endian integer.
+
         Args:
             qureg (projectq.types.Qureg):
+                The group of bits to read, in little-endian order.
 
         Returns:
             int: Little-endian register value.
@@ -60,14 +67,31 @@ class ClassicalSimulator(BasicEngine):
 
     def write_register(self, qureg, value):
         """
+        Sets a group of bits to store a little-endian integer value.
+
         Args:
             qureg (projectq.types.Qureg):
-            value (int):
+                The bits to write, in little-endian order.
+            value (int): The integer value to store. Must fit in the register.
         """
         if value < 0 or value >= 1 << len(qureg):
             raise ValueError("Value won't fit in register.")
         for i in range(len(qureg)):
             self.write_bit(qureg[i], (value >> i) & 1)
+
+    def is_available(self, cmd):
+        return (cmd.gate == Measure or
+                cmd.gate == Allocate or
+                cmd.gate == Deallocate or
+                isinstance(cmd.gate, BasicMathGate) or
+                isinstance(cmd.gate, FlushGate) or
+                isinstance(cmd.gate, XGate))
+
+    def receive(self, command_list):
+        for cmd in command_list:
+            self._handle(cmd)
+        if not self.is_last_engine:
+            self.send(command_list)
 
     def _handle(self, cmd):
         if cmd.gate == Measure or isinstance(cmd.gate, FlushGate):
@@ -105,9 +129,3 @@ class ClassicalSimulator(BasicEngine):
             return
 
         raise ValueError("Only support alloc/dealloc/measure/not/math ops.")
-
-    def receive(self, command_list):
-        for cmd in command_list:
-            self._handle(cmd)
-        if not self.is_last_engine:
-            self.send(command_list)

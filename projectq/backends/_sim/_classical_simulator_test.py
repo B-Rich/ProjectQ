@@ -40,7 +40,7 @@ def test_simulator_triangle_increment_cycle():
     assert sim.read_register(a) == 0
 
 
-def test_simulator_reposition():
+def test_simulator_bit_repositioning():
     sim = ClassicalSimulator()
     eng = MainEngine(sim, [])
     a = eng.allocate_qureg(4)
@@ -55,7 +55,7 @@ def test_simulator_reposition():
     assert sim.read_register(c) == 33
 
 
-def test_arithmetic():
+def test_simulator_arithmetic():
     class Offset(BasicMathGate):
         def __init__(self, amount):
             BasicMathGate.__init__(self, lambda x: (x+amount,))
