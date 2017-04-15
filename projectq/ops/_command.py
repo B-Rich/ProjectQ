@@ -105,10 +105,15 @@ class Command(object):
                 Gate to be executed
             qubits (tuple[Qureg]):
                 Tuple of quantum registers (to which the gate is applied)
+            controls (Qureg|list[Qubit]):
+                Qubits that condition the command.
+            tags (list[object]):
+                Tags associated with the command.
         """
         bad = set(controls).intersection(set(q
                                              for reg in qubits
                                              for q in reg))
+
         if bad:
             raise ValueError("Used a qubit as both a target and a control.\n"
                              "" + str(sorted([e.id for e in bad])))
@@ -124,6 +129,8 @@ class Command(object):
         # access via self.control_qubits property
         self._control_qubits = [WeakQubitRef(qubit.engine, qubit.id)
                                 for qubit in controls]
+        self._control_qubits = sorted(self._control_qubits,
+                                      key=lambda x: x.id)
         self.engine = engine  # property
 
     @property
@@ -160,12 +167,11 @@ class Command(object):
             NotInvertible: If the gate does not provide an inverse (see
                 BasicGate.get_inverse)
         """
-        cmd = Command(self._engine,
-                      projectq.ops.get_inverse(self.gate),
-                      self.qubits,
-                      list(self.control_qubits))
-        cmd.tags = deepcopy(self.tags)
-        return cmd
+        return Command(self._engine,
+                       projectq.ops.get_inverse(self.gate),
+                       self.qubits,
+                       list(self.control_qubits),
+                       deepcopy(self.tags))
 
     def get_merged(self, other):
         """
@@ -182,13 +188,11 @@ class Command(object):
         # TODO: (github #38) check if control qubits are compatible
         if (self.tags == other.tags and self.all_qubits == other.all_qubits and
                 self.engine == other.engine):
-            merged_command = Command(self.engine,
-                                     self.gate,
-                                     self.qubits,
-                                     self.control_qubits)
-            merged_command.gate = merged_command.gate.get_merged(other.gate)
-            merged_command.tags = deepcopy(self.tags)
-            return merged_command
+            return Command(self.engine,
+                           self.gate.get_merged(other.gate),
+                           self.qubits,
+                           self.control_qubits,
+                           deepcopy(self.tags))
         raise projectq.ops.NotMergeable("Commands not mergeable.")
 
     def _order_qubits(self, qubits):
@@ -244,30 +248,15 @@ class Command(object):
                                  for qubit in qubits])
         self._control_qubits = sorted(self._control_qubits, key=lambda x: x.id)
 
-    def add_control_qubits(self, qubits):
-        """
-        Add (additional) control qubits to this command object.
-
-        They are sorted to ensure a canonical order. Also Qubit objects
-        are converted to WeakQubitRef objects to allow garbage collection and
-        thus early deallocation of qubits.
-
-        Args:
-            qubits (list of Qubit objects): List of qubits which control this
-                gate, i.e., the gate is only executed if all qubits are
-                in state 1.
-        """
-        assert(isinstance(qubits, list))
-        self._control_qubits.extend([WeakQubitRef(qubit.engine, qubit.id)
-                                    for qubit in qubits])
-        self._control_qubits = sorted(self._control_qubits, key=lambda x: x.id)
-
     def with_extra_control_qubits(self, extra_controls):
         """
+        Creates a command with more controls.
+
         Args:
-            extra_controls (Qureg|list[Qubit]):
+            extra_controls (Qureg|list[Qubit]): Qubits to add as controls.
         Returns:
             Command:
+                The same command, but with more controls.
         """
         return Command(
             self.engine,
@@ -327,7 +316,7 @@ class Command(object):
         Returns: True if Command objects are equal (same gate, applied to same
         qubits; ordered modulo interchangeability; and same tags)
         """
-        return (isinstance(other, self.__class__) and
+        return (isinstance(other, Command) and
                 self.gate == other.gate and
                 self.tags == other.tags and
                 self.engine == other.engine and
