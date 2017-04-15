@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from projectq.cengines import DecompositionRule
-from projectq.ops import X, C_star
+from projectq.ops import X
 from ._addition_gates import Add, Subtract
 from ._increment_gates import IncrementGate
 from ._multi_not_gates import MultiNot
@@ -87,7 +87,7 @@ def do_increment_with_1_dirty(eng, target_reg, dirty_qubit, controls):
     if len(target_reg) & 1 == 0:
         do_increment_with_1_dirty(
             eng, target_reg[1:], dirty_qubit, controls + [target_reg[0]])
-        C_star(X) | (controls, target_reg[0])
+        X & controls | target_reg[0]
         return
 
     h = (len(target_reg) + 1) // 2
@@ -96,14 +96,14 @@ def do_increment_with_1_dirty(eng, target_reg, dirty_qubit, controls):
 
     # Increment high bits, conditioned on low bits wrapping.
     Subtract | (a, b)
-    C_star(MultiNot) | (controls + a, b)
+    MultiNot & (controls + a) | b
     Add | (a, b)
-    C_star(MultiNot) | (controls + a, b)
+    MultiNot & (controls + a) | b
 
     # Increment low bits.
-    C_star(MultiNot) | (controls, a + b)
+    MultiNot & controls | a + b
     Add | (b, a)
-    C_star(MultiNot) | (controls, a + b)
+    MultiNot & controls | a + b
     Subtract | (b, a)
 
 

@@ -235,7 +235,7 @@ class ManyControlledGate(BasicGate):
         return "ManyControlledGate(" + repr(self._gate) + ")"
 
     def get_inverse(self):
-        return ControlledGate(self._gate.get_inverse())
+        return ManyControlledGate(self._gate.get_inverse())
 
     def generate_commands(self, qubits):
         if len(qubits) != 2:

@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 
 from projectq.cengines import DecompositionRule
-from projectq.ops import X, C, C_star, XGate
+from projectq.ops import X, XGate
 from ._multi_not_gates import MultiNotGate
 
 
@@ -38,12 +38,12 @@ def do_multi_not_with_one_big_not_and_friends(targets, controls):
         return
 
     for i in reversed(range(len(targets) - 1)):
-        C(X) | (targets[i], targets[i + 1])
+        X & targets[i] | targets[i + 1]
 
-    C_star(X) | (controls, targets[0])
+    X & controls | targets[0]
 
     for i in range(len(targets) - 1):
-        C(X) | (targets[i], targets[i + 1])
+        X & targets[i] | targets[i + 1]
 
 
 def cut_not_max_controls_in_half(target, controls, dirty):
@@ -80,8 +80,8 @@ def cut_not_max_controls_in_half(target, controls, dirty):
     a = controls[h:]
     b = controls[:h] + [dirty]
     for _ in range(2):
-        C_star(X) | (a, dirty)
-        C_star(X) | (b, target)
+        X & a | dirty
+        X & b | target
 
 
 def cut_not_max_controls_into_toffolis(target, controls, dirty_reg):
@@ -115,16 +115,14 @@ def cut_not_max_controls_into_toffolis(target, controls, dirty_reg):
         return
     dirty_reg = dirty_reg[:d]
 
-    ccx = C(X, 2)
-
     def sweep(r):
         for i in r:
-            ccx | (controls[i+2], dirty_reg[i], dirty_reg[i+1])
+            X & controls[i+2] & dirty_reg[i] | dirty_reg[i+1]
 
     for _ in range(2):
-        ccx | (controls[-1], dirty_reg[-1], target)
+        X & controls[-1] & dirty_reg[-1] | target
         sweep(reversed(range(d - 1)))
-        ccx | (controls[0], controls[1], dirty_reg[0])
+        X & controls[0] & controls[1] | dirty_reg[0]
         sweep(range(d - 1))
 
 

@@ -5,11 +5,10 @@ from projectq.cengines import DecompositionRule
 from ._const_modular_double_multiplication_gates import (
     ConstModularDoubleMultiplicationGate
 )
-from ._modular_scaled_addition_gates import ModularScaledAdditionGate
 from ._modular_addition_gates import (
     ModularAdditionGate, ModularSubtractionGate
 )
-from projectq.ops import C_star
+from ._modular_scaled_addition_gates import ModularScaledAdditionGate
 
 
 def do_double_multiplication(gate, forward_reg, inverse_reg, controls):
@@ -25,12 +24,12 @@ def do_double_multiplication(gate, forward_reg, inverse_reg, controls):
 
     Diagram:
         c                  c
-       ━/━━━━━●━━━━       ━/━━━━━●━━━━━━━●━━━━━━━●━━━
-        n ┌───┴──┐         n  ┌──┴──┐┌───┴───┐┌──┴──┐
-       ━/━┥ ×K%R ┝━   =   ━/━━┥  A  ┝┥-AK⁻¹%R┝┥  A  ┝━
-        n ├──────┤         n  ├─────┤├───────┤├─────┤
-       ━/━┥×K⁻¹%R┝━       ━/━━┥+AK%R┝┥   A   ┝┥+AK%R┝━
-          └──────┘            └─────┘└───────┘└─────┘
+       ━/━━━━━●━━━━       ━/━━━━━●━━━━━━━●━━━━━━━●━━━━━━━━●━━━━━●━━━━━●━━━
+        n ┌───┴──┐         n  ┌──┴──┐┌───┴───┐┌──┴──┐  ┌──┴─┐┌──┴─┐┌──┴─┐
+       ━/━┥ ×K%R ┝━   =   ━/━━┥  A  ┝┥-AK⁻¹%R┝┥  A  ┝━━┥  A ┝┥-A%R┝┥  A ┝━
+        n ├──────┤         n  ├─────┤├───────┤├─────┤  ├────┤├────┤├────┤
+       ━/━┥×K⁻¹%R┝━       ━/━━┥+AK%R┝┥   A   ┝┥+AK%R┝━━┥+A%R┝┥  A ┝┥+A%R┝━
+          └──────┘            └─────┘└───────┘└─────┘  └────┘└────┘└────┘
     Args:
         gate (ConstModularDoubleMultiplicationGate):
             The gate being decomposed.
@@ -45,15 +44,19 @@ def do_double_multiplication(gate, forward_reg, inverse_reg, controls):
     assert 1 << len(forward_reg) >= gate.modulus
 
     def f(x):
-        return C_star(ModularScaledAdditionGate(x, gate.modulus))
+        return ModularScaledAdditionGate(x, gate.modulus)
+    scale_add = ModularScaledAdditionGate(gate.factor, gate.modulus)
+    scale_sub = ModularScaledAdditionGate(-gate.inverse_factor, gate.modulus)
+    add = ModularAdditionGate(gate.modulus)
+    sub = ModularSubtractionGate(gate.modulus)
 
-    f(gate.factor) | (controls, (forward_reg, inverse_reg))
-    f(-gate.inverse_factor) | (controls, (inverse_reg, forward_reg))
-    f(gate.factor) | (controls, (forward_reg, inverse_reg))
+    scale_add & controls | (forward_reg, inverse_reg)
+    scale_sub & controls | (inverse_reg, forward_reg)
+    scale_add & controls | (forward_reg, inverse_reg)
 
-    C_star(ModularAdditionGate(gate.modulus)) | (controls, (inverse_reg, forward_reg))
-    C_star(ModularSubtractionGate(gate.modulus)) | (controls, (forward_reg, inverse_reg))
-    C_star(ModularAdditionGate(gate.modulus)) | (controls, (inverse_reg, forward_reg))
+    add & controls | (inverse_reg, forward_reg)
+    sub & controls | (forward_reg, inverse_reg)
+    add & controls | (inverse_reg, forward_reg)
 
 
 all_defined_decomposition_rules = [

@@ -67,13 +67,22 @@ def test_cut_not_max_controls_into_toffolis():
     backend.restart_recording()
 
     cut_not_max_controls_into_toffolis(target, c, d)
-    tof = C(X, 2)
 
+    for e in backend.received_commands:
+        print(e)
+    print("-----------")
+    for e in [cmd for cmds in [
+        (X & d[1] & c[3]).generate_commands(target),
+        (X & d[0] & c[2]).generate_commands(d[1]),
+        (X & c[0] & c[1]).generate_commands(d[0]),
+        (X & d[0] & c[2]).generate_commands(d[1]),
+    ] for cmd in cmds] * 2:
+        print(e)
     assert backend.received_commands == [cmd for cmds in [
-        tof.generate_commands((d[1], c[3], target)),
-        tof.generate_commands((d[0], c[2], d[1])),
-        tof.generate_commands((c[0], c[1], d[0])),
-        tof.generate_commands((d[0], c[2], d[1])),
+        (X & d[1] & c[3]).generate_commands(target),
+        (X & d[0] & c[2]).generate_commands(d[1]),
+        (X & c[0] & c[1]).generate_commands(d[0]),
+        (X & d[0] & c[2]).generate_commands(d[1]),
     ] for cmd in cmds] * 2
 
 

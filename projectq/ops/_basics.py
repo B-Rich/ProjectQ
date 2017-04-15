@@ -176,6 +176,10 @@ class BasicGate(object):
         assert all(e is eng for e in engines)
         return [Command(eng, self, qubits)]
 
+    def __and__(self, qubits):
+        return PreControlledGate(
+            self, (qubits,) if isinstance(qubits, BasicQubit) else qubits)
+
     def __or__(self, qubits):
         """ Operator| overload which enables the syntax Gate | qubits.
 
@@ -196,6 +200,31 @@ class BasicGate(object):
     def __eq__(self, other):
         """ Return True if equal (i.e., instance of same class). """
         return isinstance(other, self.__class__)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+
+class PreControlledGate(BasicGate):
+    def __init__(self, gate, controls):
+        BasicGate.__init__(self)
+        self._gate = gate
+        self._controls = controls
+        if isinstance(gate, PreControlledGate):
+            self._gate = gate._gate
+            self._controls += gate._controls
+
+    def get_inverse(self):
+        return PreControlledGate(self._gate.get_inverse(), self._controls)
+
+    def generate_commands(self, qubits):
+        return [cmd.with_extra_control_qubits(self._controls)
+                for cmd in self._gate.generate_commands(qubits)]
+
+    def __eq__(self, other):
+        return (isinstance(other, PreControlledGate) and
+                self._gate == other._gate and
+                self._controls == other._controls)
 
     def __ne__(self, other):
         return not self.__eq__(other)
