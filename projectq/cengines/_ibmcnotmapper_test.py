@@ -38,11 +38,12 @@ def test_ibmcnotmapper_invalid_circuit():
     qb1 = eng.allocate_qubit()
     qb2 = eng.allocate_qubit()
     qb3 = eng.allocate_qubit()
-    CNOT | (qb1, qb2)
-    CNOT | (qb0, qb1)
-    with pytest.raises(Exception):
-        CNOT | (qb3, qb2)
-        eng.flush()
+    with eng.pipe_operations_into_receive():
+        CNOT | (qb1, qb2)
+        CNOT | (qb0, qb1)
+        with pytest.raises(Exception):
+            CNOT | (qb3, qb2)
+            eng.flush()
 
 
 def test_ibmcnotmapper_nointermediate_measurements():
@@ -52,11 +53,12 @@ def test_ibmcnotmapper_nointermediate_measurements():
     qb0 = eng.allocate_qubit()
     qb1 = eng.allocate_qubit()
 
-    CNOT | (qb0, qb1)
-    Measure | qb0
-    CNOT | (qb1, qb0)
-    with pytest.raises(Exception):
+    with eng.pipe_operations_into_receive():
+        CNOT | (qb0, qb1)
         Measure | qb0
+        CNOT | (qb1, qb0)
+        with pytest.raises(Exception):
+            Measure | qb0
 
 
 def test_ibmcnotmapper_optimizeifpossible():
@@ -67,27 +69,28 @@ def test_ibmcnotmapper_optimizeifpossible():
     qb1 = eng.allocate_qubit()
     qb2 = eng.allocate_qubit()
     qb3 = eng.allocate_qubit()
-    CNOT | (qb1, qb2)
-    CNOT | (qb2, qb1)
-    CNOT | (qb1, qb2)
+    with eng.pipe_operations_into_receive():
+        CNOT | (qb1, qb2)
+        CNOT | (qb2, qb1)
+        CNOT | (qb1, qb2)
 
-    eng.flush()
+        eng.flush()
 
-    hadamard_count = 0
-    for cmd in backend.received_commands:
-        if cmd.gate == H:
-            hadamard_count += 1
-        if cmd.gate == X:
-            assert cmd.qubits[0][0].id == qb2[0].id
+        hadamard_count = 0
+        for cmd in backend.received_commands:
+            if cmd.gate == H:
+                hadamard_count += 1
+            if cmd.gate == X:
+                assert cmd.qubits[0][0].id == qb2[0].id
 
-    assert hadamard_count == 4
-    backend.received_commands = []
+        assert hadamard_count == 4
+        backend.received_commands = []
 
-    CNOT | (qb2, qb1)
-    CNOT | (qb1, qb2)
-    CNOT | (qb2, qb1)
+        CNOT | (qb2, qb1)
+        CNOT | (qb1, qb2)
+        CNOT | (qb2, qb1)
 
-    eng.flush()
+        eng.flush()
 
     hadamard_count = 0
     for cmd in backend.received_commands:

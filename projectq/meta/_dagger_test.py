@@ -32,13 +32,14 @@ def test_dagger_with_dirty_qubits():
     backend.is_meta_tag_handler = types.MethodType(allow_dirty_qubits, backend)
     eng = MainEngine(backend=backend, engine_list=[DummyEngine()])
     qubit = eng.allocate_qubit()
-    with _dagger.Dagger(eng):
-        ancilla = eng.allocate_qubit(dirty=True)
-        Rx(0.6) | ancilla
-        CNOT | (ancilla, qubit)
-        H | qubit
-        Rx(-0.6) | ancilla
-        del ancilla[0]
+    ancilla = eng.allocate_qubit(dirty=True)
+    with eng.pipe_operations_into_receive():
+        with _dagger.Dagger(eng):
+            Rx(0.6) | ancilla
+            CNOT | (ancilla, qubit)
+            H | qubit
+            Rx(-0.6) | ancilla
+    del ancilla[0]
     eng.flush(deallocate_qubits=True)
     assert len(backend.received_commands) == 9
     assert backend.received_commands[0].gate == Allocate

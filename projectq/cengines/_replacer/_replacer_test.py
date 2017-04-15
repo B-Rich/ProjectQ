@@ -93,7 +93,8 @@ def test_auto_replacer_default_chooser(fixture_gate_filter):
     assert len(rule_set.decompositions[TestGate.__class__.__name__]) == 2
     assert len(backend.received_commands) == 0
     qb = eng.allocate_qubit()
-    TestGate | qb
+    with eng.pipe_operations_into_receive():
+        TestGate | qb
     eng.flush()
     assert len(backend.received_commands) == 3
     assert backend.received_commands[1].gate == X
@@ -111,7 +112,8 @@ def test_auto_replacer_decomposition_chooser(fixture_gate_filter):
     assert len(rule_set.decompositions[TestGate.__class__.__name__]) == 2
     assert len(backend.received_commands) == 0
     qb = eng.allocate_qubit()
-    TestGate | qb
+    with eng.pipe_operations_into_receive():
+        TestGate | qb
     eng.flush()
     assert len(backend.received_commands) == 3
     assert backend.received_commands[1].gate == H
@@ -129,8 +131,9 @@ def test_auto_replacer_no_rule_found():
     eng = MainEngine(backend=backend,
                      engine_list=[_replacer.AutoReplacer(rule_set), h_filter])
     qubit = eng.allocate_qubit()
-    with pytest.raises(_replacer.NoGateDecompositionError):
-        H | qubit
+    with eng.pipe_operations_into_receive():
+        with pytest.raises(_replacer.NoGateDecompositionError):
+            H | qubit
     eng.flush()
 
 
@@ -163,7 +166,8 @@ def test_auto_replacer_use_inverse_decomposition():
                                   _replacer.InstructionFilter(magic_filter)])
     assert len(backend.received_commands) == 0
     qb = eng.allocate_qubit()
-    MagicGate() | qb
+    with eng.pipe_operations_into_receive():
+        MagicGate() | qb
     eng.flush()
     for cmd in backend.received_commands:
         print(cmd)
@@ -181,7 +185,7 @@ def test_auto_replacer_adds_tags(fixture_gate_filter):
     assert len(rule_set.decompositions[TestGate.__class__.__name__]) == 2
     assert len(backend.received_commands) == 0
     qb = eng.allocate_qubit()
-    cmd = Command(eng, TestGate, (qb,) )
+    cmd = Command(eng, TestGate, (qb,))
     cmd.tags = ["AddedTag"]
     eng.send([cmd])
     eng.flush()

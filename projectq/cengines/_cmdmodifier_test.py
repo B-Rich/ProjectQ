@@ -28,7 +28,8 @@ def test_command_modifier():
     cmd_modifier = _cmdmodifier.CommandModifier(cmd_mod_fun)
     main_engine = MainEngine(backend=backend, engine_list=[cmd_modifier])
     qubit = main_engine.allocate_qubit()
-    H | qubit
+    with main_engine.pipe_operations_into_receive():
+        H | qubit
     # Test if H gate was sent through forwarder_eng and tag was added
     received_commands = []
     # Remove Allocate and Deallocate gates

@@ -234,17 +234,18 @@ class Loop(object):
         self.num = num
 
     def __enter__(self):
-        if self.num > 1:
-            loop_eng = LoopEngine(self.num)
-            loop_eng.main_engine = self.engine.main_engine
-            oldnext = self.engine.next_engine
-            self.engine.next_engine = loop_eng
-            loop_eng.next_engine = oldnext
-            self._loop_eng = loop_eng
+        if self.num <= 1:
+            return
+        loop_eng = LoopEngine(self.num)
+        loop_eng.main_engine = self.engine.main_engine
+        oldnext = self.engine.next_engine
+        self.engine.next_engine = loop_eng
+        loop_eng.next_engine = oldnext
+        self._loop_eng = loop_eng
 
     def __exit__(self, type, value, traceback):
-        if self.num > 1:
-            # remove loop handler from engine list (i.e. skip it)
-            self._loop_eng.run()
-            oldnext = self._loop_eng.next_engine
-            self.engine.next_engine = oldnext
+        if self.num <= 1:
+            return
+        # remove loop handler from engine list (i.e. skip it)
+        self._loop_eng.run()
+        self.engine.next_engine = self._loop_eng.next_engine

@@ -12,17 +12,16 @@
 
 """Tests for projectq.meta._compute.py"""
 
-import pytest
 import types
 import weakref
 
+import pytest
+
 from projectq import MainEngine
 from projectq.cengines import DummyEngine, CompareEngine
-from projectq.ops import H, Rx, Ry, Deallocate, Allocate, CNOT, NOT, FlushGate
-from projectq.types import WeakQubitRef
 from projectq.meta import DirtyQubitTag
-
 from projectq.meta import _compute
+from projectq.ops import H, Rx, Ry, Deallocate, Allocate, CNOT, NOT, FlushGate
 
 
 def test_compute_tag():
@@ -54,20 +53,21 @@ def test_compute_engine():
     compute_engine = _compute.ComputeEngine()
     eng = MainEngine(backend=backend, engine_list=[compute_engine])
     ancilla = eng.allocate_qubit()  # Ancilla
-    H | ancilla
-    Rx(0.6) | ancilla
-    ancilla[0].__del__()
-    # Test that adding later a new tag to one of the previous commands
-    # does not add this tags to cmds saved in compute_engine because
-    # this one does need to make a deepcopy and not store a reference.
-    assert backend.received_commands[1].gate == H
-    backend.received_commands[1].tags.append("TagAddedLater")
-    assert backend.received_commands[1].tags[-1] == "TagAddedLater"
-    compute_engine.end_compute()
-    new_qubit = eng.allocate_qubit()
-    Ry(0.5) | new_qubit
-    compute_engine.run_uncompute()
-    eng.flush()
+    with eng.pipe_operations_into_receive():
+        H | ancilla
+        Rx(0.6) | ancilla
+        ancilla[0].__del__()
+        # Test that adding later a new tag to one of the previous commands
+        # does not add this tags to cmds saved in compute_engine because
+        # this one does need to make a deepcopy and not store a reference.
+        assert backend.received_commands[1].gate == H
+        backend.received_commands[1].tags.append("TagAddedLater")
+        assert backend.received_commands[1].tags[-1] == "TagAddedLater"
+        compute_engine.end_compute()
+        new_qubit = eng.allocate_qubit()
+        Ry(0.5) | new_qubit
+        compute_engine.run_uncompute()
+        eng.flush()
     assert backend.received_commands[0].gate == Allocate
     assert backend.received_commands[0].tags == [_compute.ComputeTag()]
     assert backend.received_commands[1].gate == H
@@ -96,7 +96,8 @@ def test_uncompute_engine():
     uncompute_engine = _compute.UncomputeEngine()
     eng = MainEngine(backend=backend, engine_list=[uncompute_engine])
     qubit = eng.allocate_qubit()
-    H | qubit
+    with eng.pipe_operations_into_receive():
+        H | qubit
     assert backend.received_commands[0].gate == Allocate
     assert backend.received_commands[0].tags == [_compute.UncomputeTag()]
     assert backend.received_commands[1].gate == H
@@ -138,7 +139,8 @@ def test_deallocation_using_custom_uncompute2():
     with pytest.raises(_compute.QubitManagementError):
         with _compute.CustomUncompute(eng):
             pass
-    H | ancilla
+    with eng.pipe_operations_into_receive():
+        H | ancilla
 
 
 def test_deallocation_using_custom_uncompute3():
@@ -149,7 +151,8 @@ def test_deallocation_using_custom_uncompute3():
     with pytest.raises(_compute.QubitManagementError):
         with _compute.CustomUncompute(eng):
             ancilla = eng.allocate_qubit()
-    H | ancilla
+    with eng.pipe_operations_into_receive():
+        H | ancilla
 
 
 def test_automatic_deallocation_of_qubit_in_uncompute():
@@ -157,13 +160,14 @@ def test_automatic_deallocation_of_qubit_in_uncompute():
     # which was created during compute context.
     backend = DummyEngine(save_commands=True)
     eng = MainEngine(backend=backend, engine_list=[DummyEngine()])
-    with _compute.Compute(eng):
-        ancilla = eng.allocate_qubit()
-        assert ancilla[0].id != -1
-        Rx(0.6) | ancilla
-    # Test that ancilla qubit has been register in MainEngine.active_qubits
-    assert ancilla[0] in eng.active_qubits
-    _compute.Uncompute(eng)
+    with eng.pipe_operations_into_receive():
+        with _compute.Compute(eng):
+            ancilla = eng.allocate_qubit()
+            assert ancilla[0].id != -1
+            Rx(0.6) | ancilla
+        # Test that ancilla qubit has been register in MainEngine.active_qubits
+        assert ancilla[0] in eng.active_qubits
+        _compute.Uncompute(eng)
     # Test that ancilla id has been set to -1
     assert ancilla[0].id == -1
     # Test that ancilla is not anymore in active qubits
@@ -178,10 +182,11 @@ def test_compute_uncompute_no_additional_qubits():
     compare_engine0 = CompareEngine()
     eng0 = MainEngine(backend=backend0, engine_list=[compare_engine0])
     qubit = eng0.allocate_qubit()
-    with _compute.Compute(eng0):
-        Rx(0.5) | qubit
-    H | qubit
-    _compute.Uncompute(eng0)
+    with eng0.pipe_operations_into_receive():
+        with _compute.Compute(eng0):
+            Rx(0.5) | qubit
+        H | qubit
+        _compute.Uncompute(eng0)
     eng0.flush(deallocate_qubits=True)
     assert backend0.received_commands[0].gate == Allocate
     assert backend0.received_commands[1].gate == Rx(0.5)
@@ -198,12 +203,13 @@ def test_compute_uncompute_no_additional_qubits():
     compare_engine1 = CompareEngine()
     eng1 = MainEngine(backend=backend1, engine_list=[compare_engine1])
     qubit = eng1.allocate_qubit()
-    with _compute.Compute(eng1):
-        Rx(0.5) | qubit
-    H | qubit
-    with _compute.CustomUncompute(eng1):
-        Rx(-0.5) | qubit
-    eng1.flush(deallocate_qubits=True)
+    with eng1.pipe_operations_into_receive():
+        with _compute.Compute(eng1):
+            Rx(0.5) | qubit
+        H | qubit
+        with _compute.CustomUncompute(eng1):
+            Rx(-0.5) | qubit
+        eng1.flush(deallocate_qubits=True)
     assert compare_engine0 == compare_engine1
 
 
@@ -221,22 +227,23 @@ def test_compute_uncompute_with_statement():
     eng = MainEngine(backend=backend,
                      engine_list=[compare_engine0, dummy_cengine])
     qubit = eng.allocate_qubit()
-    with _compute.Compute(eng):
-        Rx(0.9) | qubit
-        ancilla = eng.allocate_qubit(dirty=True)
-        # ancilla2 will be deallocated in Uncompute section:
-        ancilla2 = eng.allocate_qubit()
-        # Test that ancilla is registered in MainEngine.active_qubits:
-        assert ancilla[0] in eng.active_qubits
+    with eng.pipe_operations_into_receive():
+        with _compute.Compute(eng):
+            Rx(0.9) | qubit
+            ancilla = eng.allocate_qubit(dirty=True)
+            # ancilla2 will be deallocated in Uncompute section:
+            ancilla2 = eng.allocate_qubit()
+            # Test that ancilla is registered in MainEngine.active_qubits:
+            assert ancilla[0] in eng.active_qubits
+            H | qubit
+            Rx(0.5) | ancilla
+            CNOT | (ancilla, qubit)
+            Rx(0.7) | qubit
+            Rx(-0.5) | ancilla
+            ancilla[0].__del__()
         H | qubit
-        Rx(0.5) | ancilla
-        CNOT | (ancilla, qubit)
-        Rx(0.7) | qubit
-        Rx(-0.5) | ancilla
-        ancilla[0].__del__()
-    H | qubit
-    _compute.Uncompute(eng)
-    eng.flush(deallocate_qubits=True)
+        _compute.Uncompute(eng)
+        eng.flush(deallocate_qubits=True)
     assert len(backend.received_commands) == 22
     # Test each Command has correct gate
     assert backend.received_commands[0].gate == Allocate
@@ -325,32 +332,33 @@ def test_compute_uncompute_with_statement():
     eng1 = MainEngine(backend=backend1,
                       engine_list=[compare_engine1, dummy_cengine1])
     qubit = eng1.allocate_qubit()
-    with _compute.Compute(eng1):
-        Rx(0.9) | qubit
-        ancilla = eng1.allocate_qubit(dirty=True)
-        # ancilla2 will be deallocated in Uncompute section:
-        ancilla2 = eng1.allocate_qubit()
-        # Test that ancilla is registered in MainEngine.active_qubits:
-        assert ancilla[0] in eng1.active_qubits
+    with eng1.pipe_operations_into_receive():
+        with _compute.Compute(eng1):
+            Rx(0.9) | qubit
+            ancilla = eng1.allocate_qubit(dirty=True)
+            # ancilla2 will be deallocated in Uncompute section:
+            ancilla2 = eng1.allocate_qubit()
+            # Test that ancilla is registered in MainEngine.active_qubits:
+            assert ancilla[0] in eng1.active_qubits
+            H | qubit
+            Rx(0.5) | ancilla
+            CNOT | (ancilla, qubit)
+            Rx(0.7) | qubit
+            Rx(-0.5) | ancilla
+            ancilla[0].__del__()
         H | qubit
-        Rx(0.5) | ancilla
-        CNOT | (ancilla, qubit)
-        Rx(0.7) | qubit
-        Rx(-0.5) | ancilla
-        ancilla[0].__del__()
-    H | qubit
-    with _compute.CustomUncompute(eng1):
-        ancilla = eng1.allocate_qubit(dirty=True)
-        Rx(0.5) | ancilla
-        Rx(-0.7) | qubit
-        CNOT | (ancilla, qubit)
-        Rx(-0.5) | ancilla
-        H | qubit
-        assert ancilla[0] in eng1.active_qubits
-        ancilla2[0].__del__()
-        ancilla[0].__del__()
-        Rx(-0.9) | qubit
-    eng1.flush(deallocate_qubits=True)
+        with _compute.CustomUncompute(eng1):
+            ancilla = eng1.allocate_qubit(dirty=True)
+            Rx(0.5) | ancilla
+            Rx(-0.7) | qubit
+            CNOT | (ancilla, qubit)
+            Rx(-0.5) | ancilla
+            H | qubit
+            assert ancilla[0] in eng1.active_qubits
+            ancilla2[0].__del__()
+            ancilla[0].__del__()
+            Rx(-0.9) | qubit
+        eng1.flush(deallocate_qubits=True)
     assert compare_engine0 == compare_engine1
 
 
@@ -370,7 +378,7 @@ def test_exception_if_no_compute_but_uncompute2():
 def test_qubit_management_error():
     eng = MainEngine(backend=DummyEngine(), engine_list=[DummyEngine()])
     with _compute.Compute(eng):
-        ancilla = eng.allocate_qubit()
+        _ = eng.allocate_qubit()
     eng.active_qubits = weakref.WeakSet()
     with pytest.raises(_compute.QubitManagementError):
         _compute.Uncompute(eng)
@@ -379,7 +387,7 @@ def test_qubit_management_error():
 def test_qubit_management_error2():
     eng = MainEngine(backend=DummyEngine(), engine_list=[DummyEngine()])
     with _compute.Compute(eng):
-        ancilla = eng.allocate_qubit()
+        _ = eng.allocate_qubit()
         local_ancilla = eng.allocate_qubit()
         local_ancilla[0].__del__()
     eng.active_qubits = weakref.WeakSet()

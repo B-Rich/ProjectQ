@@ -134,23 +134,6 @@ class MainEngine(BasicEngine):
         self._measurements = dict()
         self.dirty_qubits = set()
 
-        # In order to terminate an example code without eng.flush or Measure
-        self._delfun = lambda x: x.flush(deallocate_qubits=True)
-        atexit.register(self._delfun, self)
-
-    def __del__(self):
-        """
-        Destroy the main engine.
-
-        Flushes the entire circuit down the pipeline, clearing all temporary
-        buffers (in, e.g., optimizers).
-        """
-        self.flush()
-        try:
-            atexit.unregister(self._delfun)  # only available in Python3
-        except AttributeError:
-            pass
-
     def set_measurement_result(self, qubit, value):
         """
         Register a measurement result

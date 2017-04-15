@@ -65,12 +65,13 @@ def test_entangle():
                      [AutoReplacer(rule_set),
                       InstructionFilter(low_level_gates)])
     qureg = eng.allocate_qureg(4)
-    Entangle | qureg
+    with eng.pipe_operations_into_receive():
+        Entangle | qureg
 
-    assert .5 == pytest.approx(abs(sim.cheat()[1][0])**2)
-    assert .5 == pytest.approx(abs(sim.cheat()[1][-1])**2)
+        assert .5 == pytest.approx(abs(sim.cheat()[1][0])**2)
+        assert .5 == pytest.approx(abs(sim.cheat()[1][-1])**2)
 
-    Measure | qureg
+        Measure | qureg
 
 
 def low_level_gates_noglobalphase(eng, cmd):
@@ -85,27 +86,29 @@ def test_globalphase():
                              InstructionFilter(low_level_gates_noglobalphase)])
 
     qubit = eng.allocate_qubit()
-    R(1.2) | qubit
+    with eng.pipe_operations_into_receive():
+        R(1.2) | qubit
 
-    rz_count = 0
-    for cmd in dummy.received_commands:
-        assert not isinstance(cmd.gate, R)
-        if isinstance(cmd.gate, Rz):
-            rz_count += 1
-            assert cmd.gate == Rz(1.2)
+        rz_count = 0
+        for cmd in dummy.received_commands:
+            assert not isinstance(cmd.gate, R)
+            if isinstance(cmd.gate, Rz):
+                rz_count += 1
+                assert cmd.gate == Rz(1.2)
 
-    assert rz_count == 1
+        assert rz_count == 1
 
 
 def run_circuit(eng):
-    qureg = eng.allocate_qureg(4)
-    All(H) | qureg
-    CRz(3.0) | (qureg[0], qureg[1])
-    Toffoli | (qureg[1], qureg[2], qureg[3])
+    with eng.pipe_operations_into_receive():
+        qureg = eng.allocate_qureg(4)
+        All(H) | qureg
+        CRz(3.0) | (qureg[0], qureg[1])
+        Toffoli | (qureg[1], qureg[2], qureg[3])
 
-    with Control(eng, qureg[0:2]):
-        Ph(1.43) | qureg[2]
-    return qureg
+        with Control(eng, qureg[0:2]):
+            Ph(1.43) | qureg[2]
+        return qureg
 
 
 def test_gate_decompositions():
@@ -114,15 +117,19 @@ def test_gate_decompositions():
     rule_set = DecompositionRuleSet(
         modules=[r2rzandph, crz2cxandrz, toffoli2cnotandtgate, ph2r])
 
-    qureg = run_circuit(eng)
+    with eng.pipe_operations_into_receive():
+        qureg = run_circuit(eng)
 
     sim2 = Simulator()
     eng_lowlevel = MainEngine(sim2, [AutoReplacer(rule_set),
                                      InstructionFilter(low_level_gates)])
-    qureg2 = run_circuit(eng_lowlevel)
+    with eng_lowlevel.pipe_operations_into_receive():
+        qureg2 = run_circuit(eng_lowlevel)
 
     for i in range(len(sim.cheat()[1])):
         assert sim.cheat()[1][i] == pytest.approx(sim2.cheat()[1][i])
 
-    Measure | qureg
-    Measure | qureg2
+    with eng.pipe_operations_into_receive():
+        Measure | qureg
+    with eng_lowlevel.pipe_operations_into_receive():
+        Measure | qureg2

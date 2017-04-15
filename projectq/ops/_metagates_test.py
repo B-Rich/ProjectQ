@@ -14,17 +14,17 @@
 
 import cmath
 import math
+
 import numpy as np
 import pytest
 
-from projectq.types import Qubit, Qureg
 from projectq import MainEngine
 from projectq.cengines import DummyEngine
 from projectq.ops import (T, Y, NotInvertible, Entangle, Rx,
                           FastForwardingGate, Command,
-                          ClassicalInstructionGate, C, All, X, Allocate)
-
+                          ClassicalInstructionGate, C, All, X)
 from projectq.ops import _metagates
+from projectq.types import Qubit
 
 
 def test_daggered_gate_init():
@@ -112,8 +112,8 @@ def test_controlled_gate_empty_controls():
     eng = MainEngine(backend=DummyEngine())
 
     a = eng.allocate_qureg(1)
-    cmd = _metagates.ControlledGate(Y, 0).generate_command(((), a))
-    assert cmd == Command(eng, Y, [a])
+    cmd = _metagates.ControlledGate(Y, 0).generate_commands(((), a))
+    assert cmd == [Command(eng, Y, (a,))]
 
 
 def test_controlled_gate_or():
@@ -128,18 +128,20 @@ def test_controlled_gate_or():
     expected_cmd = Command(main_engine, gate, ([qubit3],),
                            controls=[qubit0, qubit1, qubit2])
     received_commands = []
-    # Option 1:
-    _metagates.ControlledGate(gate, 3) | ([qubit1], [qubit0],
-                                          [qubit2], [qubit3])
-    # Option 2:
-    _metagates.ControlledGate(gate, 3) | (qubit1, qubit0, qubit2, qubit3)
-    # Option 3:
-    _metagates.ControlledGate(gate, 3) | ([qubit1, qubit0], qubit2, qubit3)
-    # Option 4:
-    _metagates.ControlledGate(gate, 3) | (qubit1, [qubit0, qubit2], qubit3)
-    # Wrong option 5:
-    with pytest.raises(_metagates.ControlQubitError):
-        _metagates.ControlledGate(gate, 3) | (qubit1, [qubit0, qubit2, qubit3])
+    with main_engine.pipe_operations_into_receive():
+        # Option 1:
+        _metagates.ControlledGate(gate, 3) | ([qubit1], [qubit0],
+                                              [qubit2], [qubit3])
+        # Option 2:
+        _metagates.ControlledGate(gate, 3) | (qubit1, qubit0, qubit2, qubit3)
+        # Option 3:
+        _metagates.ControlledGate(gate, 3) | ([qubit1, qubit0], qubit2, qubit3)
+        # Option 4:
+        _metagates.ControlledGate(gate, 3) | (qubit1, [qubit0, qubit2], qubit3)
+        # Wrong option 5:
+        with pytest.raises(_metagates.ControlQubitError):
+            _metagates.ControlledGate(gate, 3) | (
+                qubit1, [qubit0, qubit2, qubit3])
     # Remove Allocate and Deallocate gates
     for cmd in saving_backend.received_commands:
         if not (isinstance(cmd.gate, FastForwardingGate) or
@@ -197,24 +199,25 @@ def test_tensor_or():
     qubit0 = Qubit(main_engine, 0)
     qubit1 = Qubit(main_engine, 1)
     qubit2 = Qubit(main_engine, 2)
-    # Option 1:
-    _metagates.Tensor(gate) | ([qubit0, qubit1, qubit2],)
-    # Option 2:
-    _metagates.Tensor(gate) | [qubit0, qubit1, qubit2]
-    received_commands = []
-    # Remove Allocate and Deallocate gates
-    for cmd in saving_backend.received_commands:
-        if not (isinstance(cmd.gate, FastForwardingGate) or
-                isinstance(cmd.gate, ClassicalInstructionGate)):
-            received_commands.append(cmd)
-    # Check results
-    assert len(received_commands) == 6
-    qubit_ids = []
-    for cmd in received_commands:
-        assert len(cmd.qubits) == 1
-        assert cmd.gate == gate
-        qubit_ids.append(cmd.qubits[0][0].id)
-    assert sorted(qubit_ids) == [0, 0, 1, 1, 2, 2]
+    with main_engine.pipe_operations_into_receive():
+        # Option 1:
+        _metagates.Tensor(gate) | ([qubit0, qubit1, qubit2],)
+        # Option 2:
+        _metagates.Tensor(gate) | [qubit0, qubit1, qubit2]
+        received_commands = []
+        # Remove Allocate and Deallocate gates
+        for cmd in saving_backend.received_commands:
+            if not (isinstance(cmd.gate, FastForwardingGate) or
+                    isinstance(cmd.gate, ClassicalInstructionGate)):
+                received_commands.append(cmd)
+        # Check results
+        assert len(received_commands) == 6
+        qubit_ids = []
+        for cmd in received_commands:
+            assert len(cmd.qubits) == 1
+            assert cmd.gate == gate
+            qubit_ids.append(cmd.qubits[0][0].id)
+        assert sorted(qubit_ids) == [0, 0, 1, 1, 2, 2]
 
 
 def test_controlled_tensor():
@@ -226,11 +229,12 @@ def test_controlled_tensor():
     b = main_engine.allocate_qureg(5)
     saving_backend.restart_recording()
 
-    C(All(X)) | (c, b)
-    assert tuple(saving_backend.received_commands) == (
-        Command(main_engine, X, ([b[0]],), controls=c),
-        Command(main_engine, X, ([b[1]],), controls=c),
-        Command(main_engine, X, ([b[2]],), controls=c),
-        Command(main_engine, X, ([b[3]],), controls=c),
-        Command(main_engine, X, ([b[4]],), controls=c),
-    )
+    with main_engine.pipe_operations_into_receive():
+        C(All(X)) | (c, b)
+        assert tuple(saving_backend.received_commands) == (
+            Command(main_engine, X, ([b[0]],), controls=c),
+            Command(main_engine, X, ([b[1]],), controls=c),
+            Command(main_engine, X, ([b[2]],), controls=c),
+            Command(main_engine, X, ([b[3]],), controls=c),
+            Command(main_engine, X, ([b[4]],), controls=c),
+        )

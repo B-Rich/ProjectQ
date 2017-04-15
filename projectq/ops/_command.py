@@ -244,8 +244,8 @@ class Command(object):
         Args:
             qubits (Qureg): quantum register
         """
-        self._control_qubits = ([WeakQubitRef(qubit.engine, qubit.id)
-                                 for qubit in qubits])
+        self._control_qubits = [WeakQubitRef(qubit.engine, qubit.id)
+                                for qubit in qubits]
         self._control_qubits = sorted(self._control_qubits, key=lambda x: x.id)
 
     def with_extra_control_qubits(self, extra_controls):

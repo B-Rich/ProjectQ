@@ -170,7 +170,8 @@ def test_forwarder_engine():
     forwarder_eng2 = _basics.ForwarderEngine(engine0)
     main_engine.next_engine = forwarder_eng2
     qubit = main_engine.allocate_qubit()
-    H | qubit
+    with main_engine.pipe_operations_into_receive():
+        H | qubit
     # Test if H gate was sent through forwarder_eng and tag was added
     received_commands = []
     # Remove Allocate and Deallocate gates

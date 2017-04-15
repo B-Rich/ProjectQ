@@ -43,14 +43,15 @@ def test_control():
     backend = DummyEngine(save_commands=True)
     eng = MainEngine(backend=backend, engine_list=[DummyEngine()])
     qureg = eng.allocate_qureg(2)
-    with _control.Control(eng, qureg):
-        qubit = eng.allocate_qubit()
-        with Compute(eng):
-            Rx(0.5) | qubit
-        H | qubit
-        Uncompute(eng)
-    with _control.Control(eng, qureg[0]):
-        H | qubit
+    with eng.pipe_operations_into_receive():
+        with _control.Control(eng, qureg):
+            qubit = eng.allocate_qubit()
+            with Compute(eng):
+                Rx(0.5) | qubit
+            H | qubit
+            Uncompute(eng)
+        with _control.Control(eng, qureg[0]):
+            H | qubit
     eng.flush()
     assert len(backend.received_commands) == 8
     assert len(backend.received_commands[0].control_qubits) == 0

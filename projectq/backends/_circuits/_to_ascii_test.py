@@ -29,7 +29,7 @@ def test_addition_circuit():
         if i != 4:
             commands.append(Command(eng, X, (qs[i],), controls=qs[4]))
 
-    assert commands_to_ascii_circuit(commands) == '''
+    assert commands_to_ascii_circuit(commands) == '\n' + '''
 |0⟩─────────────────⊕───×───────────────────────────×─•─⊕─────────────────
                     │   │                           │ │ │
 |0⟩───────────────⊕─┼───┼───×───────────────────×─•─┼─┼─┼─⊕───────────────

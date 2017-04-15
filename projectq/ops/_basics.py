@@ -188,7 +188,7 @@ class BasicGate(object):
         engines = [q.engine for reg in qubits for q in reg]
         eng = engines[0]
         assert all(e is eng for e in engines)
-        return [Command(eng, self, qubits)]
+        return Command(eng, self, qubits),
 
     def __and__(self, qubits):
         return PreControlledGate(

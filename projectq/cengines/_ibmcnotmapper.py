@@ -137,9 +137,10 @@ class IBMCNOTMapper(BasicEngine):
                 qubit = cmd.qubits[0]
                 ctrl = cmd.control_qubits
                 # flip the CNOT using Hadamard gates:
-                All(H) | (ctrl + qubit)
-                CNOT | (qubit, ctrl)
-                All(H) | (ctrl + qubit)
+                with cmd.engine.pipe_operations_into_receive():
+                    All(H) | (ctrl + qubit)
+                    CNOT | (qubit, ctrl)
+                    All(H) | (ctrl + qubit)
 
                 # This cmd would require remapping -->
                 # raise an exception if the CNOT id has already been

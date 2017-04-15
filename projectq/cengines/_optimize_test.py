@@ -30,18 +30,20 @@ def test_local_optimizer_caching():
     qb0 = eng.allocate_qubit()
     qb1 = eng.allocate_qubit()
     assert len(backend.received_commands) == 0
-    H | qb0
-    H | qb1
-    CNOT | (qb0, qb1)
-    assert len(backend.received_commands) == 0
-    Rx(0.5) | qb0
-    assert len(backend.received_commands) == 1
-    assert backend.received_commands[0].gate == AllocateQubitGate()
-    H | qb0
-    assert len(backend.received_commands) == 2
-    assert backend.received_commands[1].gate == H
-    # Another gate on qb0 means it needs to send CNOT but clear pipeline of qb1
-    Rx(0.6) | qb0
+    with eng.pipe_operations_into_receive():
+        H | qb0
+        H | qb1
+        CNOT | (qb0, qb1)
+        assert len(backend.received_commands) == 0
+        Rx(0.5) | qb0
+        assert len(backend.received_commands) == 1
+        assert backend.received_commands[0].gate == AllocateQubitGate()
+        H | qb0
+        assert len(backend.received_commands) == 2
+        assert backend.received_commands[1].gate == H
+        # Another gate on qb0 means it needs to send CNOT but clear pipeline of
+        # qb1
+        Rx(0.6) | qb0
     for cmd in backend.received_commands:
         print(cmd)
     assert len(backend.received_commands) == 5
@@ -60,8 +62,9 @@ def test_local_optimizer_flush_gate():
     # Test that it caches for each qubit 3 gates
     qb0 = eng.allocate_qubit()
     qb1 = eng.allocate_qubit()
-    H | qb0
-    H | qb1
+    with eng.pipe_operations_into_receive():
+        H | qb0
+        H | qb1
     assert len(backend.received_commands) == 0
     eng.flush()
     # Two allocate gates, two H gates and one flush gate
@@ -75,8 +78,9 @@ def test_local_optimizer_fast_forwarding_gate():
     # Test that FastForwardingGate (e.g. Deallocate) flushes that qb0 pipeline
     qb0 = eng.allocate_qubit()
     qb1 = eng.allocate_qubit()
-    H | qb0
-    H | qb1
+    with eng.pipe_operations_into_receive():
+        H | qb0
+        H | qb1
     assert len(backend.received_commands) == 0
     qb0[0].__del__()
     # As Deallocate gate is a FastForwardingGate, we should get gates of qb0
@@ -91,11 +95,12 @@ def test_local_optimizer_cancel_inverse():
     qb0 = eng.allocate_qubit()
     qb1 = eng.allocate_qubit()
     assert len(backend.received_commands) == 0
-    for _ in range(11):
-        H | qb0
-    assert len(backend.received_commands) == 0
-    for _ in range(11):
-        CNOT | (qb0, qb1)
+    with eng.pipe_operations_into_receive():
+        for _ in range(11):
+            H | qb0
+        assert len(backend.received_commands) == 0
+        for _ in range(11):
+            CNOT | (qb0, qb1)
     assert len(backend.received_commands) == 0
     eng.flush()
     received_commands = []
@@ -118,8 +123,9 @@ def test_local_optimizer_mergeable_gates():
     eng = MainEngine(backend=backend, engine_list=[local_optimizer])
     # Test that it merges mergeable gates such as Rx
     qb0 = eng.allocate_qubit()
-    for _ in range(10):
-        Rx(0.5) | qb0
+    with eng.pipe_operations_into_receive():
+        for _ in range(10):
+            Rx(0.5) | qb0
     assert len(backend.received_commands) == 0
     eng.flush()
     # Expect allocate, one Rx gate, and flush gate

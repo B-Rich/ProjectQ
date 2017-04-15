@@ -113,11 +113,12 @@ def test_ibm_backend_functional_test(monkeypatch):
     eng = MainEngine(backend=backend, engine_list=engine_list)
     unused_qubit = eng.allocate_qubit()
     qureg = eng.allocate_qureg(3)
-    # entangle the qureg
-    Entangle | qureg
-    # measure; should be all-0 or all-1
-    Measure | qureg
-    # run the circuit
+    with eng.pipe_operations_into_receive():
+        # entangle the qureg
+        Entangle | qureg
+        # measure; should be all-0 or all-1
+        Measure | qureg
+        # run the circuit
     eng.flush()
     prob_dict = eng.backend.get_probabilities([qureg[0], qureg[2], qureg[1]])
     assert prob_dict['111'] == pytest.approx(0.38671875)

@@ -99,13 +99,14 @@ def test_body():
     qubit1 = eng.allocate_qubit()
     qubit2 = eng.allocate_qubit()
 
-    H | qubit1
-    H | qubit2
-    CNOT | (qubit1, qubit2)
-    X | qubit2
-    Measure | qubit2
-    CNOT | (qubit2, qubit1)
-    Z | qubit2
+    with eng.pipe_operations_into_receive():
+        H | qubit1
+        H | qubit2
+        CNOT | (qubit1, qubit2)
+        X | qubit2
+        Measure | qubit2
+        CNOT | (qubit2, qubit1)
+        Z | qubit2
 
     del qubit1
     eng.flush()
@@ -133,9 +134,10 @@ def test_qubit_lines_classicalvsquantum1():
 
     qubit1 = eng.allocate_qubit()
 
-    H | qubit1
-    Measure | qubit1
-    X | qubit1
+    with eng.pipe_operations_into_receive():
+        H | qubit1
+        Measure | qubit1
+        X | qubit1
 
     circuit_lines = drawer.get_latex()
     _drawer.to_latex = old_tolatex
@@ -153,8 +155,9 @@ def test_qubit_lines_classicalvsquantum2():
     controls = eng.allocate_qureg(3)
     action = eng.allocate_qubit()
 
-    with Control(eng, controls):
-        H | action
+    with eng.pipe_operations_into_receive():
+        with Control(eng, controls):
+            H | action
 
     code = drawer.get_latex()
     assert code.count("{{{}}}".format(str(H))) == 1  # 1 Hadamard
@@ -172,8 +175,9 @@ def test_qubit_lines_classicalvsquantum3():
     action2 = eng.allocate_qubit()
     control2 = eng.allocate_qubit()
 
-    with Control(eng, control0 + control1 + control2):
-        H | (action1, action2)
+    with eng.pipe_operations_into_receive():
+        with Control(eng, control0 + control1 + control2):
+            H | (action1, action2)
 
     code = drawer.get_latex()
     assert code.count("{{{}}}".format(str(H))) == 1  # 1 Hadamard
@@ -190,10 +194,11 @@ def test_quantum_lines_cnot():
     qubit1 = eng.allocate_qubit()
     qubit2 = eng.allocate_qubit()
 
-    Measure | qubit1
-    Measure | qubit2
+    with eng.pipe_operations_into_receive():
+        Measure | qubit1
+        Measure | qubit2
 
-    CNOT | (qubit2, qubit1)
+        CNOT | (qubit2, qubit1)
 
     del qubit1, qubit2
     code = drawer.get_latex()
@@ -205,9 +210,10 @@ def test_quantum_lines_cnot():
     qubit1 = eng.allocate_qubit()
     qubit2 = eng.allocate_qubit()
 
-    Measure | qubit1  # qubit1 is classical
+    with eng.pipe_operations_into_receive():
+        Measure | qubit1  # qubit1 is classical
 
-    CNOT | (qubit2, qubit1)  # now it is quantum
+        CNOT | (qubit2, qubit1)  # now it is quantum
 
     del qubit1, qubit2
     code = drawer.get_latex()

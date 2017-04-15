@@ -33,10 +33,11 @@ def test_simulator_triangle_increment_cycle():
     eng = MainEngine(sim, [])
 
     a = eng.allocate_qureg(6)
-    for t in range(1 << 6):
-        assert sim.read_register(a) == t
-        for i in range(6)[::-1]:
-            C_star(X) | (a[:i], a[i])
+    with eng.pipe_operations_into_receive():
+        for t in range(1 << 6):
+            assert sim.read_register(a) == t
+            for i in range(6)[::-1]:
+                X & a[:i] | a[i]
     assert sim.read_register(a) == 0
 
 
@@ -71,23 +72,28 @@ def test_simulator_arithmetic():
     sim.write_register(a, 9)
     sim.write_register(b, 17)
 
-    Offset(2) | a
+    with eng.pipe_operations_into_receive():
+        Offset(2) | a
     assert sim.read_register(a) == 11
     assert sim.read_register(b) == 17
 
-    Offset(3) | b
+    with eng.pipe_operations_into_receive():
+        Offset(3) | b
     assert sim.read_register(a) == 11
     assert sim.read_register(b) == 20
 
-    Offset(32 + 5) | b
+    with eng.pipe_operations_into_receive():
+        Offset(32 + 5) | b
     assert sim.read_register(a) == 11
     assert sim.read_register(b) == 25
 
-    Sub() | (a, b)
+    with eng.pipe_operations_into_receive():
+        Sub() | (a, b)
     assert sim.read_register(a) == 11
     assert sim.read_register(b) == 14
 
-    Sub() | (a, b)
-    Sub() | (a, b)
+    with eng.pipe_operations_into_receive():
+        Sub() | (a, b)
+        Sub() | (a, b)
     assert sim.read_register(a) == 11
     assert sim.read_register(b) == 24

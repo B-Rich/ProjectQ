@@ -44,14 +44,16 @@ def test_resource_counter():
 
     qubit1 = eng.allocate_qubit()
     qubit2 = eng.allocate_qubit()
-    H | qubit1
-    X | qubit2
+    with eng.pipe_operations_into_receive():
+        H | qubit1
+        X | qubit2
     del qubit2
 
     qubit3 = eng.allocate_qubit()
-    CNOT | (qubit1, qubit3)
+    with eng.pipe_operations_into_receive():
+        CNOT | (qubit1, qubit3)
 
-    Measure | (qubit1, qubit3)
+        Measure | (qubit1, qubit3)
 
     assert int(qubit1) == int(qubit3)
     assert int(qubit1) == 0

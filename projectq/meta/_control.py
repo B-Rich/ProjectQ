@@ -99,19 +99,21 @@ class Control(object):
         self._qubits = qubits
 
     def __enter__(self):
-        if len(self._qubits) > 0:
-            ce = ControlEngine(self._qubits)
-            ce.main_engine = self.engine.main_engine
-            oldnext = self.engine.next_engine
-            self.engine.next_engine = ce
-            ce.next_engine = oldnext
-            self._ce = ce
+        if len(self._qubits) == 0:
+            return
+        ce = ControlEngine(self._qubits)
+        ce.main_engine = self.engine.main_engine
+        oldnext = self.engine.next_engine
+        self.engine.next_engine = ce
+        ce.next_engine = oldnext
+        self._ce = ce
 
     def __exit__(self, type, value, traceback):
+        if len(self._qubits) == 0:
+            return
         # remove control handler from engine list (i.e. skip it)
-        if len(self._qubits) > 0:
-            oldnext = self._ce.next_engine
-            self.engine.next_engine = oldnext
+        oldnext = self._ce.next_engine
+        self.engine.next_engine = oldnext
 
 
 def get_control_count(cmd):

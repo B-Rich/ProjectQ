@@ -43,14 +43,14 @@ def test_main_engine_init():
 
 def test_main_engine_init_failure():
     with pytest.raises(_main.UnsupportedEngineError):
-        eng = _main.MainEngine(backend=DummyEngine)
+        _ = _main.MainEngine(backend=DummyEngine)
     with pytest.raises(_main.UnsupportedEngineError):
-        eng = _main.MainEngine(engine_list=DummyEngine)
+        _ = _main.MainEngine(engine_list=DummyEngine)
     with pytest.raises(_main.UnsupportedEngineError):
-        eng = _main.MainEngine(engine_list=[DummyEngine(), DummyEngine])
+        _ = _main.MainEngine(engine_list=[DummyEngine(), DummyEngine])
     with pytest.raises(_main.UnsupportedEngineError):
         engine = DummyEngine()
-        eng = _main.MainEngine(backend=engine, engine_list=[engine])
+        _ = _main.MainEngine(backend=engine, engine_list=[engine])
 
 
 def test_main_engine_init_defaults():
@@ -64,19 +64,6 @@ def test_main_engine_init_defaults():
     from projectq.setups.default import default_engines
     for engine, expected in zip(eng_list, default_engines()):
         assert type(engine) == type(expected)
-
-
-def test_main_engine_del():
-    # need engine which caches commands to test that del calls flush
-    caching_engine = LocalOptimizer(m=5)
-    backend = DummyEngine(save_commands=True)
-    eng = _main.MainEngine(backend=backend, engine_list=[caching_engine])
-    qubit = eng.allocate_qubit()
-    H | qubit
-    assert len(backend.received_commands) == 0
-    eng.__del__()
-    # Allocate, H, and Flush Gate
-    assert len(backend.received_commands) == 3
 
 
 def test_main_engine_set_and_get_measurement_result():
@@ -104,7 +91,8 @@ def test_main_engine_flush():
     backend = DummyEngine(save_commands=True)
     eng = _main.MainEngine(backend=backend, engine_list=[DummyEngine()])
     qubit = eng.allocate_qubit()
-    H | qubit
+    with eng.pipe_operations_into_receive():
+        H | qubit
     eng.flush()
     assert len(backend.received_commands) == 3
     assert backend.received_commands[0].gate == AllocateQubitGate()

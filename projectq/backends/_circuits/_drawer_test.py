@@ -39,10 +39,11 @@ def test_drawer_getlatex():
 
     eng = MainEngine(drawer, [drawer2])
     qureg = eng.allocate_qureg(2)
-    H | qureg[1]
-    H | qureg[0]
-    X | qureg[0]
-    CNOT | (qureg[0], qureg[1])
+    with eng.pipe_operations_into_receive():
+        H | qureg[1]
+        H | qureg[0]
+        X | qureg[0]
+        CNOT | (qureg[0], qureg[1])
 
     lines = drawer2.get_latex()
     assert len(lines) == 2
@@ -62,13 +63,15 @@ def test_drawer_measurement():
     drawer = CircuitDrawer(default_measure=0)
     eng = MainEngine(drawer, [])
     qubit = eng.allocate_qubit()
-    Measure | qubit
+    with eng.pipe_operations_into_receive():
+        Measure | qubit
     assert int(qubit) == 0
 
     drawer = CircuitDrawer(default_measure=1)
     eng = MainEngine(drawer, [])
     qubit = eng.allocate_qubit()
-    Measure | qubit
+    with eng.pipe_operations_into_receive():
+        Measure | qubit
     assert int(qubit) == 1
 
     drawer = CircuitDrawer(accept_input=True)
@@ -78,7 +81,8 @@ def test_drawer_measurement():
     old_input = _drawer.input
 
     _drawer.input = lambda x: '1'
-    Measure | qubit
+    with eng.pipe_operations_into_receive():
+        Measure | qubit
     assert int(qubit) == 1
     _drawer.input = old_input
 

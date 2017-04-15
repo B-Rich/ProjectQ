@@ -90,16 +90,17 @@ def test_basic_gate_or():
     qubit3 = Qubit(main_engine, 3)
     qureg = Qureg([qubit2, qubit3])
     basic_gate = _basics.BasicGate()
-    commands1 = basic_gate.generate_commands(qubit0)
-    basic_gate | qubit0
-    commands2 = basic_gate.generate_commands([qubit0, qubit1])
-    basic_gate | [qubit0, qubit1]
-    commands3 = basic_gate.generate_commands(qureg)
-    basic_gate | qureg
-    commands4 = basic_gate.generate_commands((qubit0,))
-    basic_gate | (qubit0,)
-    commands5 = basic_gate.generate_commands((qureg, qubit0))
-    basic_gate | (qureg, qubit0)
+    with main_engine.pipe_operations_into_receive():
+        commands1 = basic_gate.generate_commands(qubit0)
+        basic_gate | qubit0
+        commands2 = basic_gate.generate_commands([qubit0, qubit1])
+        basic_gate | [qubit0, qubit1]
+        commands3 = basic_gate.generate_commands(qureg)
+        basic_gate | qureg
+        commands4 = basic_gate.generate_commands((qubit0,))
+        basic_gate | (qubit0,)
+        commands5 = basic_gate.generate_commands((qureg, qubit0))
+        basic_gate | (qureg, qubit0)
     received_commands = []
     # Remove Deallocate gates
     for cmd in saving_backend.received_commands:

@@ -32,8 +32,8 @@ from projectq.backends import Simulator
 
 
 def test_is_cpp_simulator_present():
-    import projectq.backends._sim._cppsim
-    assert projectq.backends._sim._cppsim
+     import projectq.backends._sim._cppsim
+     assert projectq.backends._sim._cppsim
 
 
 def get_available_simulators():
@@ -62,70 +62,72 @@ def sim(request):
 
 
 class Mock1QubitGate(BasicGate):
-        def __init__(self):
-            BasicGate.__init__(self)
-            self.cnt = 0
+    def __init__(self):
+        BasicGate.__init__(self)
+        self.cnt = 0
 
-        @property
-        def matrix(self):
-            self.cnt += 1
-            return [[0, 1], [1, 0]]
+    @property
+    def matrix(self):
+        self.cnt += 1
+        return [[0, 1], [1, 0]]
 
 
 class Mock2QubitGate(BasicGate):
-        def __init__(self):
-            BasicGate.__init__(self)
-            self.cnt = 0
+    def __init__(self):
+        BasicGate.__init__(self)
+        self.cnt = 0
 
-        @property
-        def matrix(self):
-            self.cnt += 1
-            return [[0, 1, 0, 0], [1, 0, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]
+    @property
+    def matrix(self):
+        self.cnt += 1
+        return [[0, 1, 0, 0], [1, 0, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]
 
 
 class MockNoMatrixGate(BasicGate):
-        def __init__(self):
-            BasicGate.__init__(self)
-            self.cnt = 0
+    def __init__(self):
+        BasicGate.__init__(self)
+        self.cnt = 0
 
-        @property
-        def matrix(self):
-            self.cnt += 1
-            raise AttributeError
+    @property
+    def matrix(self):
+        self.cnt += 1
+        raise AttributeError
 
 
 def test_simulator_is_available(sim):
     backend = DummyEngine(save_commands=True)
     eng = MainEngine(backend, [])
     qubit = eng.allocate_qubit()
-    Measure | qubit
-    BasicMathGate(lambda x: x) | qubit
-    del qubit
-    assert len(backend.received_commands) == 4
+    with eng.pipe_operations_into_receive():
+        Measure | qubit
+        BasicMathGate(lambda x: x) | qubit
+        del qubit
+        assert len(backend.received_commands) == 4
 
-    # Test that allocate, measure, basic math, and deallocate are available.
-    for cmd in backend.received_commands:
-        assert sim.is_available(cmd)
+        # Test that allocate, measure, basic math, and deallocate are available.
+        for cmd in backend.received_commands:
+            assert sim.is_available(cmd)
 
-    new_cmd = backend.received_commands[-1]
+        new_cmd = backend.received_commands[-1]
 
-    new_cmd.gate = Mock1QubitGate()
-    assert sim.is_available(new_cmd)
-    assert new_cmd.gate.cnt == 1
+        new_cmd.gate = Mock1QubitGate()
+        assert sim.is_available(new_cmd)
+        assert new_cmd.gate.cnt == 1
 
-    new_cmd.gate = Mock2QubitGate()
-    assert not sim.is_available(new_cmd)
-    assert new_cmd.gate.cnt == 1
+        new_cmd.gate = Mock2QubitGate()
+        assert not sim.is_available(new_cmd)
+        assert new_cmd.gate.cnt == 1
 
-    new_cmd.gate = MockNoMatrixGate()
-    assert not sim.is_available(new_cmd)
-    assert new_cmd.gate.cnt == 1
+        new_cmd.gate = MockNoMatrixGate()
+        assert not sim.is_available(new_cmd)
+        assert new_cmd.gate.cnt == 1
 
     eng = MainEngine(sim, [])
-    qubit1 = eng.allocate_qubit()
-    qubit2 = eng.allocate_qubit()
-    with pytest.raises(Exception):
-        Mock2QubitGate() | (qubit1, qubit2)
+    with eng.pipe_operations_into_receive():
+        qubit1 = eng.allocate_qubit()
+        qubit2 = eng.allocate_qubit()
+        with pytest.raises(Exception):
+            Mock2QubitGate() | (qubit1, qubit2)
 
 
 def test_simulator_cheat(sim):
@@ -157,11 +159,12 @@ def test_simulator_functional_measurement(sim):
     eng = MainEngine(sim, [])
     qubits = eng.allocate_qureg(5)
     # entangle all qubits:
-    H | qubits[0]
-    for qb in qubits[1:]:
-        CNOT | (qubits[0], qb)
+    with eng.pipe_operations_into_receive():
+        H | qubits[0]
+        for qb in qubits[1:]:
+            CNOT | (qubits[0], qb)
 
-    Measure | qubits
+        Measure | qubits
 
     bit_value_sum = sum([int(qubit) for qubit in qubits])
     assert bit_value_sum == 0 or bit_value_sum == 5
@@ -178,26 +181,28 @@ def test_simulator_emulation(sim):
     qubit2 = eng.allocate_qubit()
     qubit3 = eng.allocate_qubit()
 
-    with Control(eng, qubit3):
-        Plus2Gate() | (qubit1 + qubit2)
+    with eng.pipe_operations_into_receive():
+        with Control(eng, qubit3):
+            Plus2Gate() | (qubit1 + qubit2)
 
-    assert 1. == pytest.approx(sim.cheat()[1][0])
+        assert 1. == pytest.approx(sim.cheat()[1][0])
 
-    X | qubit3
-    with Control(eng, qubit3):
-        Plus2Gate() | (qubit1 + qubit2)
-    assert 1. == pytest.approx(sim.cheat()[1][6])
+        X | qubit3
+        with Control(eng, qubit3):
+            Plus2Gate() | (qubit1 + qubit2)
+        assert 1. == pytest.approx(sim.cheat()[1][6])
 
-    Measure | (qubit1 + qubit2 + qubit3)
+        Measure | (qubit1 + qubit2 + qubit3)
 
 
 def test_simulator_no_uncompute_exception(sim):
     eng = MainEngine(sim, [])
     qubit = eng.allocate_qubit()
-    H | qubit
-    with pytest.raises(RuntimeError):
-        qubit[0].__del__()
-    Measure | qubit
+    with eng.pipe_operations_into_receive():
+        H | qubit
+        with pytest.raises(RuntimeError):
+            qubit[0].__del__()
+        Measure | qubit
 
 
 class MockSimulatorBackend(object):
@@ -225,10 +230,11 @@ def test_simulator_send():
     eng = MainEngine(backend, [sim])
 
     qubit = eng.allocate_qubit()
-    H | qubit
-    Measure | qubit
-    del qubit
-    eng.flush()
+    with eng.pipe_operations_into_receive():
+        H | qubit
+        Measure | qubit
+        del qubit
+        eng.flush()
 
     assert len(backend.received_commands) == 5
 
@@ -236,44 +242,45 @@ def test_simulator_send():
 def test_simulator_functional_entangle(sim):
     eng = MainEngine(sim, [])
     qubits = eng.allocate_qureg(5)
-    # entangle all qubits:
-    H | qubits[0]
-    for qb in qubits[1:]:
-        CNOT | (qubits[0], qb)
+    with eng.pipe_operations_into_receive():
+        # entangle all qubits:
+        H | qubits[0]
+        for qb in qubits[1:]:
+            CNOT | (qubits[0], qb)
 
-    # check the state vector:
-    assert .5 == pytest.approx(abs(sim.cheat()[1][0])**2)
-    assert .5 == pytest.approx(abs(sim.cheat()[1][31])**2)
-    for i in range(1, 31):
-        assert 0. == pytest.approx(abs(sim.cheat()[1][i]))
+        # check the state vector:
+        assert .5 == pytest.approx(abs(sim.cheat()[1][0])**2)
+        assert .5 == pytest.approx(abs(sim.cheat()[1][31])**2)
+        for i in range(1, 31):
+            assert 0. == pytest.approx(abs(sim.cheat()[1][i]))
 
-    # unentangle all except the first 2
-    for qb in qubits[2:]:
-        CNOT | (qubits[0], qb)
+        # unentangle all except the first 2
+        for qb in qubits[2:]:
+            CNOT | (qubits[0], qb)
 
-    # entangle using Toffolis
-    for qb in qubits[2:]:
-        Toffoli | (qubits[0], qubits[1], qb)
+        # entangle using Toffolis
+        for qb in qubits[2:]:
+            Toffoli | (qubits[0], qubits[1], qb)
 
-    # check the state vector:
-    assert .5 == pytest.approx(abs(sim.cheat()[1][0])**2)
-    assert .5 == pytest.approx(abs(sim.cheat()[1][31])**2)
-    for i in range(1, 31):
-        assert 0. == pytest.approx(abs(sim.cheat()[1][i]))
+        # check the state vector:
+        assert .5 == pytest.approx(abs(sim.cheat()[1][0])**2)
+        assert .5 == pytest.approx(abs(sim.cheat()[1][31])**2)
+        for i in range(1, 31):
+            assert 0. == pytest.approx(abs(sim.cheat()[1][i]))
 
-    # uncompute using multi-controlled NOTs
-    with Control(eng, qubits[0:-1]):
-        X | qubits[-1]
-    with Control(eng, qubits[0:-2]):
-        X | qubits[-2]
-    with Control(eng, qubits[0:-3]):
-        X | qubits[-3]
-    CNOT | (qubits[0], qubits[1])
-    H | qubits[0]
+        # uncompute using multi-controlled NOTs
+        with Control(eng, qubits[0:-1]):
+            X | qubits[-1]
+        with Control(eng, qubits[0:-2]):
+            X | qubits[-2]
+        with Control(eng, qubits[0:-3]):
+            X | qubits[-3]
+        CNOT | (qubits[0], qubits[1])
+        H | qubits[0]
 
-    # check the state vector:
-    assert 1. == pytest.approx(abs(sim.cheat()[1][0])**2)
-    for i in range(1, 32):
-        assert 0. == pytest.approx(abs(sim.cheat()[1][i]))
+        # check the state vector:
+        assert 1. == pytest.approx(abs(sim.cheat()[1][0])**2)
+        for i in range(1, 32):
+            assert 0. == pytest.approx(abs(sim.cheat()[1][i]))
 
-    Measure | qubits
+        Measure | qubits

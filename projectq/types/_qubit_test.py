@@ -77,11 +77,11 @@ def test_basic_qubit_hash():
                    for e in range(100))) == 100
 
     # When id is -1, hash should behave like reference identity.
-    assert len(set(hash(_qubit.BasicQubit(fake_engine, -1))
-                   for _ in range(100))) > 90
+    neg_qubits = [_qubit.BasicQubit(fake_engine, -1) for _ in range(100)]
+    assert len(set(hash(q) for q in neg_qubits)) > 90
     # When id is not -1, hash should not behave like reference identity.
-    assert len(set(hash(_qubit.BasicQubit(fake_engine, +1))
-                   for _ in range(100))) == 1
+    pos_qubits = [_qubit.BasicQubit(fake_engine, +1) for _ in range(100)]
+    assert len(set(hash(q) for q in pos_qubits)) == 1
 
 
 @pytest.fixture
