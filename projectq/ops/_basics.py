@@ -176,6 +176,9 @@ class BasicGate(object):
                 assert(qubits[i][-1].engine == qubits[i + 1][0].engine)
         return Command(qubits[0][0].engine, self, qubits)
 
+    def __and__(self, controls):
+        return GateWithCurriedControls(self, controls)
+
     def __or__(self, qubits):
         """ Operator| overload which enables the syntax Gate | qubits.
 
@@ -199,6 +202,40 @@ class BasicGate(object):
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+
+class GateWithCurriedControls(BasicGate):
+    def __init__(self, gate, controls):
+        BasicGate.__init__(self)
+        self._gate = gate
+        self._controls = controls
+        if isinstance(gate, GateWithCurriedControls):
+            self._gate = gate._gate
+            self._controls += gate._controls
+
+    def get_inverse(self):
+        return GateWithCurriedControls(self._gate.get_inverse(),
+                                       self._controls)
+
+    def generate_command(self, qubits):
+        cmd = self._gate.generate_command(qubits)
+        cmd.add_control_qubits(qubits)
+        return cmd
+
+    def __or__(self, quregs):
+        from projectq.meta import Control
+        quregs = BasicGate.make_tuple_of_qureg(quregs)
+        eng = [q for reg in quregs for q in reg][0].engine
+        with Control(eng, self._controls):
+            self._gate | quregs
+
+    def __str__(self):
+        return str(self._gate) + " & " + str([q.id for q in self._controls])
+
+    def __eq__(self, other):
+        return (isinstance(other, GateWithCurriedControls) and
+                self._gate == other._gate and
+                self._controls == other._controls)
 
 
 class SelfInverseGate(BasicGate):
