@@ -124,6 +124,9 @@ class DummyEngine(BasicEngine):
         else:
             pass
 
+    def restart_recording(self):
+        self.received_commands = []
+
 
 class LimitedCapabilityEngine(BasicEngine):
     """

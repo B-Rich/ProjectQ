@@ -29,15 +29,14 @@ def test_do_increment_with_no_controls_and_n_dirty():
     dirty = eng.allocate_qureg(10)
     backend.restart_recording()
 
-    with eng.pipe_operations_into_receive():
-        do_increment_with_no_controls_and_n_dirty(eng, target, dirty)
+    do_increment_with_no_controls_and_n_dirty(eng, target, dirty)
 
-    assert backend.received_commands == [cmd for cmds in [
-        Subtract.generate_commands(eng, (dirty, target)),
-        MultiNot.generate_commands(eng, dirty),
-        Subtract.generate_commands(eng, (dirty, target)),
-        MultiNot.generate_commands(eng, dirty),
-    ] for cmd in cmds]
+    assert backend.received_commands == [
+        Subtract.generate_command((dirty, target)),
+        MultiNot.generate_command(dirty),
+        Subtract.generate_command((dirty, target)),
+        MultiNot.generate_command(dirty),
+    ]
 
 
 def test_fuzz_do_increment_with_no_controls_and_n_dirty():
@@ -71,8 +70,7 @@ def test_decomposition_chain():
     controls = eng.allocate_qureg(40)
     target = eng.allocate_qureg(35)
     _ = eng.allocate_qureg(2)
-    with eng.pipe_operations_into_receive():
-        Increment & controls | target
+    Increment & controls | target
     assert 1000 < len(backend.received_commands) < 10000
 
 

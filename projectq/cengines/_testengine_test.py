@@ -182,12 +182,12 @@ def test_limited_capability_engine_allow_toffoli():
 
     assert not default_eng.is_available(Z.generate_command(q))
     assert not default_eng.is_available(X.generate_command(q))
-    assert not default_eng.is_available(CNOT.generate_command(tuple(q)))
-    assert not default_eng.is_available(Toffoli.generate_command(tuple(q)))
-    assert not default_eng.is_available(CCCNOT.generate_command(tuple(q)))
+    assert not default_eng.is_available((X & q[1:2]).generate_command(q[0]))
+    assert not default_eng.is_available((X & q[1:3]).generate_command(q[0]))
+    assert not default_eng.is_available((X & q[1:4]).generate_command(q[0]))
 
     assert not eng.is_available(Z.generate_command(q))
     assert eng.is_available(X.generate_command(q))
-    assert eng.is_available(CNOT.generate_command(tuple(q)))
-    assert eng.is_available(Toffoli.generate_command(tuple(q)))
-    assert not eng.is_available(CCCNOT.generate_command(tuple(q)))
+    assert eng.is_available((X & q[1:2]).generate_command(q[0]))
+    assert eng.is_available((X & q[1:3]).generate_command(q[0]))
+    assert not eng.is_available((X & q[1:4]).generate_command(q[0]))

@@ -31,20 +31,19 @@ def test_exact_commands_for_small_circuit():
     src = eng.allocate_qureg(2)
     dst = eng.allocate_qureg(2)
     backend.restart_recording()
-    with eng.pipe_operations_into_receive():
-        do_addition_with_same_size_and_no_controls(src, dst)
+    do_addition_with_same_size_and_no_controls(src, dst)
 
     a, c = src[0], src[1]
     x, y = dst[0], dst[1]
-    assert backend.received_commands == [cmd for cmds in [
-        (MultiNot & c).generate_commands(eng, Qureg([y, x, a])),
-        (X & c).generate_commands(eng, x),
-        (Swap & x).generate_commands(eng, (a, c)),
-        (X & c).generate_commands(eng, y),
-        (Swap & x).generate_commands(eng, (a, c)),
-        (X & a).generate_commands(eng, x),
-        (MultiNot & c).generate_commands(eng, Qureg([a, x, y])),
-    ] for cmd in cmds]
+    assert backend.received_commands == [
+        (MultiNot & c).generate_command(Qureg([y, x, a])),
+        (X & c).generate_command(x),
+        (Swap & x).generate_command((a, c)),
+        (X & c).generate_command(y),
+        (Swap & x).generate_command((a, c)),
+        (X & a).generate_command(x),
+        (MultiNot & c).generate_command(Qureg([a, x, y])),
+    ]
 
 
 def test_decompose_big_to_toffolis():
@@ -60,8 +59,7 @@ def test_decompose_big_to_toffolis():
     ])
     src = eng.allocate_qureg(50)
     dst = eng.allocate_qureg(100)
-    with eng.pipe_operations_into_receive():
-        Add | (src, dst)
+    Add | (src, dst)
 
     assert 1000 < len(backend.received_commands) < 10000
 

@@ -29,15 +29,14 @@ def fuzz_permutation_against_circuit(register_sizes,
     eng = MainEngine(backend=backend, engine_list=engine_list)
     registers = [eng.allocate_qureg(size) for size in register_sizes]
 
-    with eng.pipe_operations_into_receive():
-        # Encode inputs.
-        for i in range(n):
-            for b in range(register_sizes[i]):
-                if inputs[i] & (1 << b):
-                    X | registers[i][b]
+    # Encode inputs.
+    for i in range(n):
+        for b in range(register_sizes[i]):
+            if inputs[i] & (1 << b):
+                X | registers[i][b]
 
-        # Simulate.
-        actions(eng, registers)
+    # Simulate.
+    actions(eng, registers)
 
     # Compare outputs.
     actual_outputs = [backend.read_register(registers[i]) for i in range(n)]
@@ -54,8 +53,7 @@ def actions_as_ascii_diagram(register_sizes, engine_list, actions):
     backend = DummyEngine(save_commands=True)
     eng = MainEngine(backend=backend, engine_list=engine_list)
     registers = [eng.allocate_qureg(n) for n in register_sizes]
-    with eng.pipe_operations_into_receive():
-        actions(eng, registers)
+    actions(eng, registers)
     eng.flush()
     return commands_to_ascii_circuit(backend.received_commands)
 
@@ -64,7 +62,6 @@ def actions_as_latex_diagram(register_sizes, engine_list, actions):
     backend = CircuitDrawer()
     eng = MainEngine(backend=backend, engine_list=engine_list)
     registers = [eng.allocate_qureg(n) for n in register_sizes]
-    with eng.pipe_operations_into_receive():
-        actions(eng, registers)
+    actions(eng, registers)
     eng.flush()
     return backend.get_latex()

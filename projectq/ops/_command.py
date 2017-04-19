@@ -244,6 +244,13 @@ class Command(object):
                                     for qubit in qubits])
         self._control_qubits = sorted(self._control_qubits, key=lambda x: x.id)
 
+    def untouched_qubits(self):
+        touched = set(q.id for reg in self.all_qubits for q in reg)
+        avail = set(q.id for q in self.engine.main_engine.active_qubits)
+        untouched = avail - touched
+        result = list(WeakQubitRef(self.engine, qid) for qid in untouched)
+        return sorted(result, key=lambda q: q.id)
+
     @property
     def all_qubits(self):
         """

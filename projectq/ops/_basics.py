@@ -177,6 +177,9 @@ class BasicGate(object):
         return Command(qubits[0][0].engine, self, qubits)
 
     def __and__(self, controls):
+        if isinstance(controls, BasicQubit):
+            controls = [controls]
+        controls = list(controls)
         return GateWithCurriedControls(self, controls)
 
     def __or__(self, qubits):
@@ -219,7 +222,7 @@ class GateWithCurriedControls(BasicGate):
 
     def generate_command(self, qubits):
         cmd = self._gate.generate_command(qubits)
-        cmd.add_control_qubits(qubits)
+        cmd.add_control_qubits(self._controls)
         return cmd
 
     def __or__(self, quregs):
@@ -461,3 +464,16 @@ class BasicMathGate(BasicGate):
                 gate. (See BasicMathGate.__init__ for an example).
         """
         return self._math_function
+
+
+class BasicMathGate2(BasicMathGate):
+    def __init__(self):
+        def do_not_call(*_):
+            raise AssertionError()
+        BasicMathGate.__init__(self, do_not_call)
+
+    def do_operation(self, *args):
+        raise NotImplementedError()
+
+    def get_math_function(self, qubits):
+        return lambda x: self.do_operation(*x)

@@ -31,19 +31,18 @@ def test_do_double_multiplication():
     c = eng.allocate_qureg(3)
 
     backend.restart_recording()
-    with eng.pipe_operations_into_receive():
-        do_double_multiplication(
-            ConstModularDoubleMultiplicationGate(3, 13), a, b, c)
+    do_double_multiplication(
+        ConstModularDoubleMultiplicationGate(3, 13), a, b, c)
 
     m = ModularScaledAdditionGate
-    assert backend.received_commands == [cmd for cmds in [
-        (m(3, 13) & c).generate_commands(eng, (a, b)),
-        (m(4, 13) & c).generate_commands(eng, (b, a)),
-        (m(3, 13) & c).generate_commands(eng, (a, b)),
-        (ModularAdditionGate(13) & c).generate_commands(eng, (b, a)),
-        (ModularSubtractionGate(13) & c).generate_commands(eng, (a, b)),
-        (ModularAdditionGate(13) & c).generate_commands(eng, (b, a)),
-    ] for cmd in cmds]
+    assert backend.received_commands == [
+        (m(3, 13) & c).generate_command((a, b)),
+        (m(4, 13) & c).generate_command((b, a)),
+        (m(3, 13) & c).generate_command((a, b)),
+        (ModularAdditionGate(13) & c).generate_command((b, a)),
+        (ModularSubtractionGate(13) & c).generate_command((a, b)),
+        (ModularAdditionGate(13) & c).generate_command((b, a)),
+    ]
 
 
 # def test_decompose_big_to_toffolis():

@@ -10,7 +10,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from projectq.ops import BasicGate
+from projectq.ops import BasicGate, Command
 
 
 class ThisIsNotAGateClassError(TypeError):
@@ -25,7 +25,10 @@ class DecompositionRule:
     def __init__(self,
                  gate_class,
                  gate_decomposer,
-                 gate_recognizer=lambda cmd: True):
+                 custom_predicate=lambda cmd: True,
+                 min_allocated_but_untouched_bits=0,
+                 max_controls=float('infinity'),
+                 min_controls=0):
         """
         Args:
             gate_class (type): The type of gate that this rule decomposes.
@@ -38,13 +41,21 @@ class DecompositionRule:
                 You supply gate_class=MyGate or gate_class=MyGate().__class__,
                 not gate_class=MyGate().
 
-            gate_decomposer (function[projectq.ops.Command]): Function which,
+            gate_decomposer (function[Command]): Function which,
                 given the command to decompose, applies a sequence of gates
                 corresponding to the high-level function of a gate of type
                 gate_class.
 
-            gate_recognizer (function[projectq.ops.Command] : boolean): A
-                predicate that determines if the decomposition applies to the
+            min_allocated_but_untouched_bits (int):
+                When this many 'workspace qubits' aren't already allocated and
+                available, the decomposition won't be used.
+
+            max_controls (int|infinity):
+                When a command has more than this many controls, the
+                decomposition won't be used.
+
+            custom_predicate (function[Command] : boolean):
+                A function that determines if the decomposition applies to the
                 given command (on top of the filtering by gate_class).
 
                 For example, a decomposition rule may only to apply rotation
@@ -66,4 +77,23 @@ class DecompositionRule:
 
         self.gate_class = gate_class
         self.gate_decomposer = gate_decomposer
-        self.gate_recognizer = gate_recognizer
+        self._min_extra_space = min_allocated_but_untouched_bits
+        self._max_controls = max_controls
+        self._min_controls = min_controls
+        self._custom_predicate = custom_predicate
+
+    def can_apply_to_command(self, command):
+        """
+        Args:
+            command (Command): The command to potentially decompose.
+        Returns:
+            bool: If this decomposition rule can be applied to the command.
+        """
+        return (
+            isinstance(command.gate, self.gate_class) and
+            (self._min_controls <=
+                len(command.control_qubits) <=
+                self._max_controls) and
+            (self._min_extra_space == 0 or
+             len(command.untouched_qubits()) >= self._min_extra_space) and
+            self._custom_predicate(command))

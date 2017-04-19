@@ -9,8 +9,10 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
+from collections import defaultdict
 
 from projectq.meta import Dagger
+from . import DecompositionRule
 
 
 class DecompositionRuleSet:
@@ -20,12 +22,12 @@ class DecompositionRuleSet:
     def __init__(self, rules=None, modules=None):
         """
         Args:
-            rules list[DecompositionRule]: Initial decomposition rules.
-            modules (iterable[ModuleWithDecompositionRuleSet]): A list of
+            rules (list[DecompositionRule]): Initial decomposition rules.
+            modules (list[ModuleWithDecompositionRuleSet|*]): A list of
                 things with an "all_defined_decomposition_rules" property
                 containing decomposition rules to add to the rule set.
         """
-        self.decompositions = dict()
+        self.decompositions = defaultdict(list)
 
         if rules:
             self.add_decomposition_rules(rules)
@@ -47,10 +49,9 @@ class DecompositionRuleSet:
         Args:
             rule (DecompositionRuleGate): The decomposition rule to add.
         """
-        decomp_obj = _Decomposition(rule.gate_decomposer, rule.gate_recognizer)
+        decomp_obj = _Decomposition(rule.gate_decomposer,
+                                    rule.can_apply_to_command)
         cls = rule.gate_class.__name__
-        if cls not in self.decompositions:
-            self.decompositions[cls] = []
         self.decompositions[cls].append(decomp_obj)
 
 
