@@ -1,14 +1,14 @@
-from ._addition_gates import Add, Subtract, AdditionGate, SubtractionGate
-from ._const_modular_double_multiplication_gates import (
+from ._addition import Add, Subtract, AdditionGate, SubtractionGate
+from ._modular_bimultiplication import (
     ConstModularDoubleMultiplicationGate
 )
-from ._increment_gates import (
+from ._increment import (
     Increment, Decrement, IncrementGate, DecrementGate
 )
-from ._modular_addition_gates import (
+from ._modular_addition import (
     ModularAdditionGate, ModularSubtractionGate
 )
-from ._modular_scaled_addition_gates import ModularScaledAdditionGate
-from ._multi_not_gates import MultiNot, MultiNotGate
-from ._phase_gradient_gates import PhaseGradientGate, PhaseGradient
-from ._vector_phase_gates import VectorPhaseGate, Z
+from ._modular_scaled_addition import ModularScaledAdditionGate
+from ._multi_not import MultiNot, MultiNotGate
+from ._phase_gradient import PhaseGradientGate, PhaseGradient
+from ._vector_phaser import VectorPhaserGate, Z

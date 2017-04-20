@@ -29,7 +29,7 @@ def _superscriptify(text):
     return text
 
 
-class VectorPhaseGate(BasicGate):
+class VectorPhaserGate(BasicGate):
     def __init__(self, vector, half_turns=1.0):
         BasicGate.__init__(self)
         self.vector = vector
@@ -44,7 +44,7 @@ class VectorPhaseGate(BasicGate):
         return np.identity(len(self.vector)) + (p - 1) * d
 
     def get_inverse(self):
-        return VectorPhaseGate(self.vector, -self.half_turns)
+        return VectorPhaserGate(self.vector, -self.half_turns)
 
     def get_merged(self, other):
         raise NotMergeable()
@@ -55,7 +55,7 @@ class VectorPhaseGate(BasicGate):
         Args:
             power (int|float|fractions.Fraction):
         Returns:
-            VectorPhaseGate:
+            VectorPhaserGate:
         """
         return self.with_half_turns(self.half_turns * power)
 
@@ -94,9 +94,9 @@ class VectorPhaseGate(BasicGate):
         return '{}**({})'.format(self.base_str(), self._exponent_repr())
 
 
-class ZGate(VectorPhaseGate):
+class ZGate(VectorPhaserGate):
     def __init__(self, half_turns=1.0):
-        VectorPhaseGate.__init__(self, [0, 1], half_turns)
+        VectorPhaserGate.__init__(self, [0, 1], half_turns)
 
     def with_half_turns(self, half_turns):
         return ZGate(half_turns)
@@ -113,6 +113,6 @@ class ZGate(VectorPhaseGate):
             return "S⁻¹"
         if self.half_turns == -0.25:
             return "T⁻¹"
-        return VectorPhaseGate.__str__(self)
+        return VectorPhaserGate.__str__(self)
 
 Z = ZGate()

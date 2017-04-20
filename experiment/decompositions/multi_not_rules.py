@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 from projectq.cengines import DecompositionRule
 from projectq.ops import X, XGate
-from .gates import MultiNotGate
+from ..gates import MultiNotGate
 
 
 def do_multi_not_with_one_big_not_and_friends(targets, controls):

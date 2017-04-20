@@ -7,15 +7,15 @@ from projectq.cengines import (LimitedCapabilityEngine,
                                DecompositionRuleSet)
 from projectq.ops import X
 from projectq.setups.decompositions import swap2cnot
-from . import (
-    quantum_ancilla_bootstrap_decompositions,
-    phase_gradient_decompositions,
-    increment_decompositions,
-    multi_not_decompositions,
-    addition_decompositions
-)
 from ._test_util import check_quantum_permutation_circuit
-from .gates import Increment
+from ..decompositions import (
+    bootstrap_ancilla_rules,
+    phase_gradient_rules,
+    increment_rules,
+    multi_not_rules,
+    addition_rules
+)
+from ..gates import Increment
 
 
 def test_full_cnot_permutations_small():
@@ -28,11 +28,11 @@ def test_full_cnot_permutations_small():
                 i ^ (1 if control_mask & i == control_mask else 0),
             engine_list=[
                 AutoReplacer(DecompositionRuleSet(modules=[
-                    quantum_ancilla_bootstrap_decompositions,
-                    phase_gradient_decompositions,
-                    increment_decompositions,
-                    multi_not_decompositions,
-                    addition_decompositions,
+                    bootstrap_ancilla_rules,
+                    phase_gradient_rules,
+                    increment_rules,
+                    multi_not_rules,
+                    addition_rules,
                     swap2cnot,
                 ])),
                 LimitedCapabilityEngine(
@@ -54,11 +54,11 @@ def test_full_increment_permutations_small():
                     i + (1 << c if control_mask & i == control_mask else 0),
                 engine_list=[
                     AutoReplacer(DecompositionRuleSet(modules=[
-                        quantum_ancilla_bootstrap_decompositions,
-                        phase_gradient_decompositions,
-                        increment_decompositions,
-                        multi_not_decompositions,
-                        addition_decompositions,
+                        bootstrap_ancilla_rules,
+                        phase_gradient_rules,
+                        increment_rules,
+                        multi_not_rules,
+                        addition_rules,
                         swap2cnot,
                     ])),
                     LimitedCapabilityEngine(

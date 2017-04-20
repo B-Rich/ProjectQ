@@ -10,14 +10,14 @@ from projectq.cengines import (LimitedCapabilityEngine,
                                DecompositionRuleSet,
                                DummyEngine)
 from projectq.setups.decompositions import swap2cnot
-from . import (addition_decompositions,
-               increment_decompositions,
-               multi_not_decompositions)
-from .increment_decompositions import (
+from ._test_util import fuzz_permutation_circuit
+from ..decompositions import (addition_rules,
+                              increment_rules,
+                              multi_not_rules)
+from ..decompositions.increment_rules import (
     do_increment_with_no_controls_and_n_dirty
 )
-from ._test_util import fuzz_permutation_circuit
-from .gates import Subtract, Increment, MultiNot
+from ..gates import Subtract, Increment, MultiNot
 
 
 def test_do_increment_with_no_controls_and_n_dirty():
@@ -43,8 +43,8 @@ def test_fuzz_do_increment_with_no_controls_and_n_dirty():
             register_sizes=[4, 4],
             expected_outs_for_ins=lambda a, b: (a + 1, b),
             engine_list=[AutoReplacer(DecompositionRuleSet(modules=[
-                addition_decompositions,
-                multi_not_decompositions,
+                addition_rules,
+                multi_not_rules,
                 swap2cnot
             ]))],
             actions=lambda eng, regs:
@@ -57,9 +57,9 @@ def test_decomposition_chain():
     backend = DummyEngine(save_commands=True)
     eng = MainEngine(backend=backend, engine_list=[
         AutoReplacer(DecompositionRuleSet(modules=[
-            multi_not_decompositions,
-            increment_decompositions,
-            addition_decompositions,
+            multi_not_rules,
+            increment_rules,
+            addition_rules,
             swap2cnot,
         ])),
         LimitedCapabilityEngine(allow_toffoli=True),
@@ -83,9 +83,9 @@ def test_fuzz_controlled_increment():
             engine_list=[
                 AutoReplacer(DecompositionRuleSet(modules=[
                     swap2cnot,
-                    multi_not_decompositions,
-                    increment_decompositions,
-                    addition_decompositions,
+                    multi_not_rules,
+                    increment_rules,
+                    addition_rules,
                 ])),
                 LimitedCapabilityEngine(allow_toffoli=True),
             ],

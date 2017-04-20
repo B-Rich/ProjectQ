@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 
 from projectq.cengines import DecompositionRule
 from projectq.ops import X, XGate, H
-from .gates import Increment, Decrement, PhaseGradient, Z, IncrementGate
+from ..gates import Increment, Decrement, PhaseGradient, Z, IncrementGate
 
 
 def do_bootstrap_ancilla_out_of_big_cnot(target, controls):

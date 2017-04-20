@@ -13,16 +13,16 @@ from projectq.cengines import (DummyEngine,
 from projectq.ops import Swap, X
 from projectq.setups.decompositions import swap2cnot
 from projectq.types import Qureg
-from . import (
-    multi_not_decompositions,
-    addition_decompositions,
-    increment_decompositions
-)
 from ._test_util import fuzz_permutation_circuit, check_permutation_circuit
-from .addition_decompositions import (
+from ..decompositions import (
+    multi_not_rules,
+    addition_rules,
+    increment_rules
+)
+from ..decompositions.addition_rules import (
     do_addition_with_same_size_and_no_controls
 )
-from .gates import Add, Subtract, MultiNot, IncrementGate, DecrementGate
+from ..gates import Add, Subtract, MultiNot, IncrementGate, DecrementGate
 
 
 def test_exact_commands_for_small_circuit():
@@ -51,9 +51,9 @@ def test_decompose_big_to_toffolis():
     eng = MainEngine(backend=backend, engine_list=[
         AutoReplacer(DecompositionRuleSet(modules=[
             swap2cnot,
-            multi_not_decompositions,
-            addition_decompositions,
-            increment_decompositions
+            multi_not_rules,
+            addition_rules,
+            increment_rules
         ])),
         LimitedCapabilityEngine(allow_nots_with_many_controls=True),
     ])
@@ -80,9 +80,9 @@ def test_check_small_permutations():
             engine_list=[
                 AutoReplacer(DecompositionRuleSet(modules=[
                     swap2cnot,
-                    multi_not_decompositions,
-                    addition_decompositions,
-                    increment_decompositions
+                    multi_not_rules,
+                    addition_rules,
+                    increment_rules
                 ])),
                 LimitedCapabilityEngine(
                     allow_nots_with_many_controls=True,
@@ -101,8 +101,8 @@ def test_fuzz_large_add_same_size():
             engine_list=[
                 AutoReplacer(DecompositionRuleSet(modules=[
                     swap2cnot,
-                    multi_not_decompositions,
-                    addition_decompositions
+                    multi_not_rules,
+                    addition_rules
                 ])),
                 LimitedCapabilityEngine(allow_toffoli=True)],
             actions=lambda eng, regs: Add | (regs[0], regs[1]))
@@ -118,9 +118,9 @@ def test_fuzz_large_subtract_different_sizes():
             engine_list=[
                 AutoReplacer(DecompositionRuleSet(modules=[
                     swap2cnot,
-                    multi_not_decompositions,
-                    addition_decompositions,
-                    increment_decompositions
+                    multi_not_rules,
+                    addition_rules,
+                    increment_rules
                 ])),
                 LimitedCapabilityEngine(allow_toffoli=True)],
             actions=lambda eng, regs: Subtract | (regs[0], regs[1]))

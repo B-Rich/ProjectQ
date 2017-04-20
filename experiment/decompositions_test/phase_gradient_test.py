@@ -5,9 +5,9 @@ from __future__ import unicode_literals
 from projectq.cengines import (LimitedCapabilityEngine,
                                AutoReplacer,
                                DecompositionRuleSet)
-from . import phase_gradient_decompositions
 from ._test_util import check_phase_circuit
-from .gates import PhaseGradient
+from ..decompositions import phase_gradient_rules
+from ..gates import PhaseGradient
 
 
 def test_circuit_implements_phase_angle_specified_by_gate():
@@ -17,7 +17,7 @@ def test_circuit_implements_phase_angle_specified_by_gate():
             PhaseGradient.phase_angle_in_turns_for(vals[0], lens[0]),
         engine_list=[
             AutoReplacer(DecompositionRuleSet(modules=[
-                phase_gradient_decompositions
+                phase_gradient_rules
             ])),
             LimitedCapabilityEngine(
                 allow_single_qubit_gates=True
@@ -32,7 +32,7 @@ def test_controlled_circuit():
         expected_turns=lambda vals, lens: -vals[0]/2**7 if vals[1] == 7 else 0,
         engine_list=[
             AutoReplacer(DecompositionRuleSet(modules=[
-                phase_gradient_decompositions
+                phase_gradient_rules
             ])),
             LimitedCapabilityEngine(
                 allow_single_qubit_gates_with_controls=True

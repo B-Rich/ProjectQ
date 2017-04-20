@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from projectq.ops import BasicGate, NotMergeable
 from fractions import Fraction
+
+from projectq.ops import BasicGate, NotMergeable
 
 
 class PhaseGradientGate(BasicGate):

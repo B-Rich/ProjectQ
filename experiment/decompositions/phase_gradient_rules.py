@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 from __future__ import division
+from __future__ import unicode_literals
 
 from projectq.cengines import DecompositionRule
-from .gates import PhaseGradientGate, Z
+from ..gates import PhaseGradientGate, Z
 
 
 def do_phase_gradient(target_reg, controls, factor):

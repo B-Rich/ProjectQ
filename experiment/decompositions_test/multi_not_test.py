@@ -10,16 +10,16 @@ from projectq.cengines import (LimitedCapabilityEngine,
                                DecompositionRuleSet,
                                DummyEngine)
 from projectq.ops import X
-from . import multi_not_decompositions
-from .multi_not_decompositions import (
+from ._test_util import (
+    fuzz_permutation_circuit, check_permutation_circuit
+)
+from ..decompositions import multi_not_rules
+from ..decompositions.multi_not_rules import (
     do_multi_not_with_one_big_not_and_friends,
     cut_not_max_controls_in_half,
     cut_not_max_controls_into_toffolis,
 )
-from .gates import MultiNot
-from ._test_util import (
-    fuzz_permutation_circuit, check_permutation_circuit
-)
+from ..gates import MultiNot
 
 
 def test_do_multi_not_with_one_big_not_and_friends():
@@ -99,7 +99,7 @@ def test_big_decomposition_chain_size():
     backend = DummyEngine(save_commands=True)
     eng = MainEngine(backend=backend, engine_list=[
         AutoReplacer(DecompositionRuleSet(modules=[
-            multi_not_decompositions,
+            multi_not_rules,
         ])),
         LimitedCapabilityEngine(allow_toffoli=True),
     ])
@@ -126,7 +126,7 @@ def test_permutations_small():
                      d),
                 engine_list=[
                     AutoReplacer(DecompositionRuleSet(modules=[
-                        multi_not_decompositions,
+                        multi_not_rules,
                     ])),
                     LimitedCapabilityEngine(allow_toffoli=True),
                 ],
@@ -143,7 +143,7 @@ def test_fuzz_large():
                 (t ^ (((1 << targets) - 1) if c+1 == 1 << controls else 0), c),
             engine_list=[
                 AutoReplacer(DecompositionRuleSet(modules=[
-                    multi_not_decompositions,
+                    multi_not_rules,
                 ])),
                 LimitedCapabilityEngine(allow_toffoli=True),
             ],

@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 
 from projectq.cengines import DecompositionRule
-from .gates import (
+from ..gates import (
     ConstModularDoubleMultiplicationGate,
     ModularAdditionGate,
     ModularSubtractionGate,
@@ -10,7 +10,7 @@ from .gates import (
 )
 
 
-def do_double_multiplication(gate, forward_reg, inverse_reg, controls):
+def do_bimultiplication(gate, forward_reg, inverse_reg, controls):
     """
     Reversibly adds one register into another of the same size.
 
@@ -61,7 +61,7 @@ def do_double_multiplication(gate, forward_reg, inverse_reg, controls):
 all_defined_decomposition_rules = [
     DecompositionRule(
         gate_class=ConstModularDoubleMultiplicationGate,
-        gate_decomposer=lambda cmd: do_double_multiplication(
+        gate_decomposer=lambda cmd: do_bimultiplication(
             cmd.gate,
             forward_reg=cmd.qubits[0],
             inverse_reg=cmd.qubits[1],

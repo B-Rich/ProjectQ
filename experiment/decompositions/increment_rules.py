@@ -2,7 +2,7 @@
 
 from projectq.cengines import DecompositionRule
 from projectq.ops import X
-from .gates import Add, Subtract, IncrementGate, MultiNot
+from ..gates import Add, Subtract, IncrementGate, MultiNot
 
 
 def do_increment_with_no_controls_and_n_dirty(target_reg, dirty_reg):

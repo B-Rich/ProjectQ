@@ -7,19 +7,17 @@ from projectq.cengines import (DummyEngine,
                                AutoReplacer,
                                DecompositionRuleSet,
                                LimitedCapabilityEngine)
-from . import (
-    const_modular_double_multiplication_decompositions
+from ._test_util import fuzz_permutation_circuit
+from ..decompositions import modular_bimultiplication_rules
+from ..decompositions.modular_bimultiplication_rules import (
+    do_bimultiplication
 )
-from .const_modular_double_multiplication_decompositions import (
-    do_double_multiplication
-)
-from .gates import (
+from ..gates import (
     ConstModularDoubleMultiplicationGate,
     ModularAdditionGate,
     ModularSubtractionGate,
     ModularScaledAdditionGate
 )
-from ._test_util import fuzz_permutation_circuit
 
 
 def test_do_double_multiplication():
@@ -30,7 +28,7 @@ def test_do_double_multiplication():
     c = eng.allocate_qureg(3)
 
     backend.restart_recording()
-    do_double_multiplication(
+    do_bimultiplication(
         ConstModularDoubleMultiplicationGate(3, 13), a, b, c)
 
     m = ModularScaledAdditionGate
@@ -49,9 +47,9 @@ def test_do_double_multiplication():
 #     eng = MainEngine(backend=backend,engine_list=[
 #         AutoReplacer(DecompositionRuleSet(modules=[
 #             swap2cnot,
-#             _multi_not_decompositions,
-#             _addition_decompositions,
-#             _increment_decompositions
+#             _multi_not_rules,
+#             _addition_rules,
+#             _increment_rules
 #         ])),
 #         LimitedCapabilityEngine(allow_nots_with_many_controls=True),
 #     ])
@@ -77,7 +75,7 @@ def test_fuzz_double_multiplication():
                 else (a*5 % 1001, c, b*801 % 1001),
             engine_list=[
                 AutoReplacer(DecompositionRuleSet(modules=[
-                    const_modular_double_multiplication_decompositions,
+                    modular_bimultiplication_rules,
                 ])),
                 LimitedCapabilityEngine(
                     allow_arithmetic=True,

@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 from projectq.cengines import DecompositionRule
 from projectq.meta import Control
 from projectq.ops import X, Swap
-from .gates import AdditionGate, Increment, Decrement, MultiNot
+from ..gates import AdditionGate, Increment, Decrement, MultiNot
 
 
 def do_addition_with_same_size_and_no_controls(input_reg, target_reg):
