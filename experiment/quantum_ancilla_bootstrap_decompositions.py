@@ -92,7 +92,7 @@ all_defined_decomposition_rules = [
             target=cmd.qubits[0],
             controls=cmd.control_qubits)),
 
-    # Simplify an increment without working by extracting a C*NOT from it.
+    # Simplify an increment without workspace by extracting a C*NOT from it.
     DecompositionRule(
         gate_class=IncrementGate,
         max_workspace=0,
