@@ -2,12 +2,10 @@
 
 from projectq.cengines import DecompositionRule
 from projectq.ops import X
-from ._addition_gates import Add, Subtract
-from ._increment_gates import IncrementGate
-from ._multi_not_gates import MultiNot
+from .gates import Add, Subtract, IncrementGate, MultiNot
 
 
-def do_increment_with_no_controls_and_n_dirty(eng, target_reg, dirty_reg):
+def do_increment_with_no_controls_and_n_dirty(target_reg, dirty_reg):
     """
     Reversibly increments a register by subtracting x and -x-1 out of it.
 
@@ -38,7 +36,6 @@ def do_increment_with_no_controls_and_n_dirty(eng, target_reg, dirty_reg):
        ──────       ─┤   ├─⊕─┤   ├─⊕─
                      └───┘   └───┘
     Args:
-        eng (projectq.cengines.BasicEngine): Engine.
         target_reg (projectq.types.Qureg):
             The register to increment.
         dirty_reg (projectq.types.Qureg):
@@ -53,7 +50,7 @@ def do_increment_with_no_controls_and_n_dirty(eng, target_reg, dirty_reg):
     MultiNot | dirty_reg
 
 
-def do_increment_with_1_dirty(eng, target_reg, dirty_qubit, controls):
+def do_increment_with_1_dirty(target_reg, dirty_qubit, controls):
     """
     Reversibly increments an even-sized register.
 
@@ -72,7 +69,6 @@ def do_increment_with_1_dirty(eng, target_reg, dirty_qubit, controls):
        ──────────        ─────╱ ╲━━┥   ┝━⊕━┥   ┝━⊕━━━━┥ A ┝━⊕━┥ A ┝━⊕━╱ ╲─
                                    └───┘   └───┘      └───┘   └───┘
     Args:
-        eng (projectq.cengines.BasicEngine): Engine.
         target_reg (projectq.types.Qureg):
             The register to increment.
         dirty_qubit (projectq.types.Qubit):
@@ -86,7 +82,7 @@ def do_increment_with_1_dirty(eng, target_reg, dirty_qubit, controls):
     # Reduce even-sized case to odd-sized case.
     if len(target_reg) & 1 == 0:
         do_increment_with_1_dirty(
-            eng, target_reg[1:], dirty_qubit, controls + [target_reg[0]])
+            target_reg[1:], dirty_qubit, controls + [target_reg[0]])
         X & controls | target_reg[0]
         return
 
@@ -111,7 +107,6 @@ all_defined_decomposition_rules = [
     DecompositionRule(
         gate_class=IncrementGate,
         gate_decomposer=lambda cmd: do_increment_with_no_controls_and_n_dirty(
-            cmd.engine,
             target_reg=cmd.qubits[0],
             dirty_reg=cmd.untouched_qubits()),
         max_controls=0,
@@ -121,10 +116,9 @@ all_defined_decomposition_rules = [
     DecompositionRule(
         gate_class=IncrementGate,
         gate_decomposer=lambda cmd: do_increment_with_1_dirty(
-            cmd.engine,
             target_reg=cmd.qubits[0],
             dirty_qubit=cmd.untouched_qubits()[0],
             controls=cmd.control_qubits),
-        min_allocated_but_untouched_bits=1,
+        min_workspace=1,
     ),
 ]

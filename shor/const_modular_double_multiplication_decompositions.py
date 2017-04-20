@@ -2,13 +2,12 @@
 from __future__ import unicode_literals
 
 from projectq.cengines import DecompositionRule
-from ._const_modular_double_multiplication_gates import (
-    ConstModularDoubleMultiplicationGate
+from .gates import (
+    ConstModularDoubleMultiplicationGate,
+    ModularAdditionGate,
+    ModularSubtractionGate,
+    ModularScaledAdditionGate,
 )
-from ._modular_addition_gates import (
-    ModularAdditionGate, ModularSubtractionGate
-)
-from ._modular_scaled_addition_gates import ModularScaledAdditionGate
 
 
 def do_double_multiplication(gate, forward_reg, inverse_reg, controls):

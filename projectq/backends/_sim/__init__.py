@@ -12,3 +12,4 @@
 
 from ._simulator import Simulator
 from ._classical_simulator import ClassicalSimulator
+from ._permutation_simulator import PermutationSimulator

@@ -29,6 +29,7 @@ This means that for more than one quantum argument (right side of | ), a tuple
 needs to be made explicitely, while for one argument it is optional.
 """
 
+import abc
 import math
 from copy import deepcopy
 
@@ -228,6 +229,8 @@ class GateWithCurriedControls(BasicGate):
     def __or__(self, quregs):
         from projectq.meta import Control
         quregs = BasicGate.make_tuple_of_qureg(quregs)
+        if sum(len(reg) for reg in quregs) == 0:
+            return
         eng = [q for reg in quregs for q in reg][0].engine
         with Control(eng, self._controls):
             self._gate | quregs

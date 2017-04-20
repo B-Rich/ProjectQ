@@ -10,14 +10,16 @@ from projectq.cengines import (LimitedCapabilityEngine,
                                DecompositionRuleSet,
                                DummyEngine)
 from projectq.ops import X
-from . import _multi_not_decompositions
-from ._multi_not_decompositions import (
+from . import multi_not_decompositions
+from .multi_not_decompositions import (
     do_multi_not_with_one_big_not_and_friends,
     cut_not_max_controls_in_half,
     cut_not_max_controls_into_toffolis,
 )
-from ._multi_not_gates import MultiNot
-from ._test_util import fuzz_permutation_against_circuit
+from .gates import MultiNot
+from ._test_util import (
+    fuzz_permutation_circuit, check_permutation_circuit
+)
 
 
 def test_do_multi_not_with_one_big_not_and_friends():
@@ -97,7 +99,7 @@ def test_big_decomposition_chain_size():
     backend = DummyEngine(save_commands=True)
     eng = MainEngine(backend=backend, engine_list=[
         AutoReplacer(DecompositionRuleSet(modules=[
-            _multi_not_decompositions,
+            multi_not_decompositions,
         ])),
         LimitedCapabilityEngine(allow_toffoli=True),
     ])
@@ -107,17 +109,41 @@ def test_big_decomposition_chain_size():
     assert 200*4*2 <= len(backend.received_commands) <= 200*4*4
 
 
-def test_fuzz():
+def test_permutations_small():
+    for targets in [0, 1, 2, 3, 5]:
+        for controls in [0, 1, 2, 3]:
+            # If there are multiple targets, each can use the others as\
+            # workspace. Otherwise we need a dirty bit.
+            dirty = 1 if targets == 1 else 0
+
+            check_permutation_circuit(
+                register_sizes=[targets, controls, dirty],
+                expected_outs_for_ins=lambda t, c, d:
+                    (t ^ (((1 << targets) - 1)
+                          if c + 1 == 1 << controls
+                          else 0),
+                     c,
+                     d),
+                engine_list=[
+                    AutoReplacer(DecompositionRuleSet(modules=[
+                        multi_not_decompositions,
+                    ])),
+                    LimitedCapabilityEngine(allow_toffoli=True),
+                ],
+                actions=lambda eng, regs: MultiNot & regs[1] | regs[0])
+
+
+def test_fuzz_large():
     for _ in range(10):
-        targets = random.randint(2, 4)
-        controls = random.randint(0, 4)
-        fuzz_permutation_against_circuit(
+        targets = random.randint(2, 100)
+        controls = random.randint(0, 100)
+        fuzz_permutation_circuit(
             register_sizes=[targets, controls],
-            outputs_for_input=lambda t, c:
+            expected_outs_for_ins=lambda t, c:
                 (t ^ (((1 << targets) - 1) if c+1 == 1 << controls else 0), c),
             engine_list=[
                 AutoReplacer(DecompositionRuleSet(modules=[
-                    _multi_not_decompositions,
+                    multi_not_decompositions,
                 ])),
                 LimitedCapabilityEngine(allow_toffoli=True),
             ],

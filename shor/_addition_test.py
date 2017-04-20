@@ -13,16 +13,15 @@ from projectq.ops import Swap, X
 from projectq.setups.decompositions import swap2cnot
 from projectq.types import Qureg
 from . import (
-    _multi_not_decompositions,
-    _addition_decompositions,
-    _increment_decompositions
+    multi_not_decompositions,
+    addition_decompositions,
+    increment_decompositions
 )
-from ._addition_decompositions import (
+from .addition_decompositions import (
     do_addition_with_same_size_and_no_controls
 )
-from ._addition_gates import Add, Subtract
-from ._multi_not_gates import MultiNot
-from ._test_util import fuzz_permutation_against_circuit
+from .gates import Add, Subtract, MultiNot
+from ._test_util import fuzz_permutation_circuit
 
 
 def test_exact_commands_for_small_circuit():
@@ -51,9 +50,9 @@ def test_decompose_big_to_toffolis():
     eng = MainEngine(backend=backend, engine_list=[
         AutoReplacer(DecompositionRuleSet(modules=[
             swap2cnot,
-            _multi_not_decompositions,
-            _addition_decompositions,
-            _increment_decompositions
+            multi_not_decompositions,
+            addition_decompositions,
+            increment_decompositions
         ])),
         LimitedCapabilityEngine(allow_nots_with_many_controls=True),
     ])
@@ -67,14 +66,14 @@ def test_decompose_big_to_toffolis():
 def test_fuzz_add_same_size():
     for _ in range(10):
         n = random.randint(1, 100)
-        fuzz_permutation_against_circuit(
+        fuzz_permutation_circuit(
             register_sizes=[n, n],
-            outputs_for_input=lambda a, b: (a, b + a),
+            expected_outs_for_ins=lambda a, b: (a, b + a),
             engine_list=[
                 AutoReplacer(DecompositionRuleSet(modules=[
                     swap2cnot,
-                    _multi_not_decompositions,
-                    _addition_decompositions
+                    multi_not_decompositions,
+                    addition_decompositions
                 ])),
                 LimitedCapabilityEngine(allow_toffoli=True)],
             actions=lambda eng, regs: Add | (regs[0], regs[1]))
@@ -84,15 +83,15 @@ def test_fuzz_subtract_into_large():
     for _ in range(10):
         n = random.randint(1, 15)
         e = random.randint(1, 15)
-        fuzz_permutation_against_circuit(
+        fuzz_permutation_circuit(
             register_sizes=[n, n + e, 2],
-            outputs_for_input=lambda a, b, d: (a, b - a, d),
+            expected_outs_for_ins=lambda a, b, d: (a, b - a, d),
             engine_list=[
                 AutoReplacer(DecompositionRuleSet(modules=[
                     swap2cnot,
-                    _multi_not_decompositions,
-                    _addition_decompositions,
-                    _increment_decompositions
+                    multi_not_decompositions,
+                    addition_decompositions,
+                    increment_decompositions
                 ])),
                 LimitedCapabilityEngine(allow_toffoli=True)],
             actions=lambda eng, regs: Subtract | (regs[0], regs[1]))

@@ -3,9 +3,7 @@ from __future__ import unicode_literals
 
 from projectq.cengines import DecompositionRule
 from projectq.ops import X, Swap
-from ._addition_gates import AdditionGate
-from ._increment_gates import Increment, Decrement
-from ._multi_not_gates import MultiNot
+from .gates import AdditionGate, Increment, Decrement, MultiNot
 
 
 def do_addition_with_same_size_and_no_controls(input_reg, target_reg):
@@ -196,5 +194,5 @@ all_defined_decomposition_rules = [
             target_reg=cmd.qubits[1],
             controls=cmd.control_qubits,
             dirty=cmd.untouched_qubits()[0]),
-        min_allocated_but_untouched_bits=1),
+        min_workspace=1),
 ]

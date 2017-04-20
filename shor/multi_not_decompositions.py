@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 from projectq.cengines import DecompositionRule
 from projectq.ops import X, XGate
-from ._multi_not_gates import MultiNotGate
+from .gates import MultiNotGate
 
 
 def do_multi_not_with_one_big_not_and_friends(targets, controls):
@@ -155,7 +155,7 @@ all_defined_decomposition_rules = [
     DecompositionRule(
         gate_class=XGate,
         min_controls=3,
-        min_allocated_but_untouched_bits=1,
+        min_workspace=1,
         gate_decomposer=lambda cmd: cut_not_max_controls_in_half(
             target=cmd.qubits[0],
             controls=cmd.control_qubits,

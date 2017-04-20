@@ -8,19 +8,18 @@ from projectq.cengines import (DummyEngine,
                                DecompositionRuleSet,
                                LimitedCapabilityEngine)
 from . import (
-    _const_modular_double_multiplication_decompositions
+    const_modular_double_multiplication_decompositions
 )
-from ._const_modular_double_multiplication_decompositions import (
+from .const_modular_double_multiplication_decompositions import (
     do_double_multiplication
 )
-from ._const_modular_double_multiplication_gates import (
-    ConstModularDoubleMultiplicationGate
+from .gates import (
+    ConstModularDoubleMultiplicationGate,
+    ModularAdditionGate,
+    ModularSubtractionGate,
+    ModularScaledAdditionGate
 )
-from ._modular_addition_gates import (
-    ModularAdditionGate, ModularSubtractionGate
-)
-from ._modular_scaled_addition_gates import ModularScaledAdditionGate
-from ._test_util import fuzz_permutation_against_circuit
+from ._test_util import fuzz_permutation_circuit
 
 
 def test_do_double_multiplication():
@@ -69,16 +68,16 @@ def test_fuzz_double_multiplication():
         cn = 1
         mod = 1001
         op = ConstModularDoubleMultiplicationGate(5, mod)
-        fuzz_permutation_against_circuit(
+        fuzz_permutation_circuit(
             register_sizes=[n, cn, n],
             register_limits=[mod, 1 << cn, mod],
-            outputs_for_input=lambda a, c, b:
+            expected_outs_for_ins=lambda a, c, b:
                 (a, c, b)
                 if c != 2**cn - 1
                 else (a*5 % 1001, c, b*801 % 1001),
             engine_list=[
                 AutoReplacer(DecompositionRuleSet(modules=[
-                    _const_modular_double_multiplication_decompositions,
+                    const_modular_double_multiplication_decompositions,
                 ])),
                 LimitedCapabilityEngine(
                     allow_arithmetic=True,

@@ -145,6 +145,7 @@ class LimitedCapabilityEngine(BasicEngine):
                  allow_toffoli=False,
                  allow_nots_with_many_controls=False,
                  allow_single_qubit_gates=False,
+                 allow_single_qubit_gates_with_controls=False,
                  allow_classes=(),
                  allow_custom_predicate=lambda cmd: False,
                  ban_classes=(),
@@ -178,6 +179,9 @@ class LimitedCapabilityEngine(BasicEngine):
                 Allows gates that affect only a single qubit
                 (counting controls).
 
+            allow_single_qubit_gates_with_controls (bool):
+                Allows gates that target only a single qubit.
+
             allow_classes (list[type]):
                 Allows any gates matching the given class.
 
@@ -195,6 +199,8 @@ class LimitedCapabilityEngine(BasicEngine):
         self.allow_all = allow_all
         self.allow_nots_with_many_controls = allow_nots_with_many_controls
         self.allow_single_qubit_gates = allow_single_qubit_gates
+        self.allow_single_qubit_gates_with_controls = (
+            allow_single_qubit_gates_with_controls)
         self.allow_toffoli = allow_toffoli
         self.allow_classical_instructions = allow_classical_instructions
         self.allowed_classes = tuple(allow_classes)
@@ -235,7 +241,12 @@ class LimitedCapabilityEngine(BasicEngine):
                 len(cmd.control_qubits) <= 2):
             return True
 
-        if self.allow_single_qubit_gates and len(cmd.all_qubits) == 1:
+        if self.allow_single_qubit_gates and sum(
+                len(reg) for reg in cmd.all_qubits) == 1:
+            return True
+
+        if self.allow_single_qubit_gates_with_controls and sum(
+                len(reg) for reg in cmd.qubits) == 1:
             return True
 
         if self.allow_nots_with_many_controls and isinstance(cmd.gate, XGate):

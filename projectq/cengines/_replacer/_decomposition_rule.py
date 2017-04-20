@@ -26,7 +26,8 @@ class DecompositionRule:
                  gate_class,
                  gate_decomposer,
                  custom_predicate=lambda cmd: True,
-                 min_allocated_but_untouched_bits=0,
+                 min_workspace=0,
+                 max_workspace=float('inf'),
                  max_controls=float('infinity'),
                  min_controls=0):
         """
@@ -46,9 +47,13 @@ class DecompositionRule:
                 corresponding to the high-level function of a gate of type
                 gate_class.
 
-            min_allocated_but_untouched_bits (int):
+            min_workspace (int):
                 When this many 'workspace qubits' aren't already allocated and
                 available, the decomposition won't be used.
+
+            max_workspace (int):
+                When more than this many 'workspace qubits' are available,
+                the decomposition won't be used.
 
             max_controls (int|infinity):
                 When a command has more than this many controls, the
@@ -77,7 +82,8 @@ class DecompositionRule:
 
         self.gate_class = gate_class
         self.gate_decomposer = gate_decomposer
-        self._min_extra_space = min_allocated_but_untouched_bits
+        self._min_extra_space = min_workspace
+        self._max_extra_space = max_workspace
         self._max_controls = max_controls
         self._min_controls = min_controls
         self._custom_predicate = custom_predicate
@@ -89,11 +95,19 @@ class DecompositionRule:
         Returns:
             bool: If this decomposition rule can be applied to the command.
         """
-        return (
-            isinstance(command.gate, self.gate_class) and
-            (self._min_controls <=
-                len(command.control_qubits) <=
-                self._max_controls) and
-            (self._min_extra_space == 0 or
-             len(command.untouched_qubits()) >= self._min_extra_space) and
-            self._custom_predicate(command))
+        if not isinstance(command.gate, self.gate_class):
+            return False
+
+        controls = len(command.control_qubits)
+        if controls < self._min_controls:
+            return False
+        if controls > self._max_controls:
+            return False
+
+        extra_space = len(command.untouched_qubits())
+        if extra_space < self._min_extra_space:
+            return False
+        if extra_space > self._max_extra_space:
+            return False
+
+        return self._custom_predicate(command)

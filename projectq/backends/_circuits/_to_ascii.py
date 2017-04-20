@@ -115,7 +115,7 @@ def _labels_border(cmd):
     border = not hasattr(cmd.gate, 'ascii_borders') or cmd.gate.ascii_borders()
     if hasattr(cmd.gate, 'ascii_register_labels'):
         return cmd.gate.ascii_register_labels(), border
-    return [str(cmd.gate)], border
+    return [unicode(cmd.gate)], border
 
 
 def _wire_col(cmd, id_to_index, index_to_id):
@@ -138,7 +138,10 @@ def _wire_col(cmd, id_to_index, index_to_id):
                 notes[q.id].append(str(j))
 
     labels, border = _labels_border(cmd)
-    w = max(len(e) for e in labels) + (6 if border else 0)
+    w = max(len(e) for e in labels) + (
+        0 if not border
+        else 2 if sum(len(reg) for reg in cmd.qubits) == 1
+        else 6)
 
     between_wires = _between_wire_cols(len(cmd.control_qubits) > 0,
                                        used_indices,
