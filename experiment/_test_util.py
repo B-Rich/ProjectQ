@@ -76,6 +76,14 @@ def check_permutation_circuit(register_sizes,
     if not permutation_matches:
         print(actions_as_ascii_diagram(register_sizes, engine_list, actions))
         print("Register Sizes", register_sizes)
+        print("Differing Permutations [input --> expected != actual]:")
+        starts = PermutationSimulator.starting_permutation(register_sizes)
+        for a, b in zip(starts, backend.get_permutation(registers)):
+            b = list(b)
+            c = expected_outs_for_ins(*a)
+            c = [i & ((1 << v) - 1) for i, v in zip(c, register_sizes)]
+            if not np.array_equal(c, b):
+                print("   " + str(a) + " --> " + str(c) + " != " + str(b))
     assert permutation_matches
 
 

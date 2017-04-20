@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from projectq.cengines import DecompositionRule
+from projectq.meta import Control
 from projectq.ops import X, Swap
 from .gates import AdditionGate, Increment, Decrement, MultiNot
 
@@ -10,17 +11,15 @@ def do_addition_with_same_size_and_no_controls(input_reg, target_reg):
     """
     Reversibly adds one register into another of the same size.
 
-    N: len(input_reg) + len(target_ref)
+    N: len(input_reg) + len(target_reg)
     Size: O(N)
     Depth: O(N)
-
     Sources:
         Takahashi and Kunihiro, 2005
         "A linear-size quantum circuit for addition with no ancillary qubits"
 
         Yvan Van Rentergem and Alexis De Vos, 2004
         "Optimal Design of A Reversible Full Adder"
-
     Diagram:
        ┌───┐
        ┤   ├       ─⊕─────×─────────────────────────────────────×─●───⊕─
@@ -85,42 +84,34 @@ def do_addition_with_larger_target_and_no_controls(input_reg, target_reg):
     """
     Reversibly adds one register into another larger one size.
 
-    N: len(input_reg) + len(target_ref)
+    N: len(input_reg) + len(target_reg)
     Size: O(N)
     Depth: O(N)
-
-    Sources:
-        Takahashi and Kunihiro, 2005
-        "A linear-size quantum circuit for addition with no ancillary qubits"
-
-        Yvan Van Rentergem and Alexis De Vos, 2004
-        "Optimal Design of A Reversible Full Adder"
-
     Diagram:
-                     ╭──●───╮
-       ┌───┐         │ ┌┴─┐ │
-       ┤   ├       ──┼─┤  ├─┼────────×─────────────────────────────────────×─●─
-       │   │         │ │  │ │        │                                     │ │
-       ┤   ├       ──┼─┤  ├─┼────────┼────×───────────────────────────×─●──┼─┼─
-       │   │         │ │  │ │        │    │                           │ │  │ │
-       ┤inp├       ──┼─┤  ├─┼────────┼────┼────×─────────────────×─●──┼─┼──┼─┼─
-       │ A │         │ │  │ │        │    │    │                 │ │  │ │  │ │
-       ┤   ├       ──┼─┤  ├─┼────────┼────┼────┼────×───────×─●──┼─┼──┼─┼──┼─┼─
-       │   │         │ │  │ │        │    │    │    │       │ │  │ │  │ │  │ │
-       ┤   ├       ──╯ │  │ ╰─●────●─×──●─×──●─×──●─×───●───×─┼──×─┼──×─┼──×─┼─
-       └─┬─┘           │−1│   │    │ │  │ │  │ │  │ │   │   │ │  │ │  │ │  │ │
-       ┌─┴─┐   =       │  │  ┌┴─┐  │ │  │ │  │ │  │ │   │   │ │  │ │  │ │  │ │
-       ┤   ├       ────┤  ├──┤  ├──⊕─●──┼─●──┼─┼──┼─┼───┼───┼─┼──┼─┼──┼─┼──●─⊕─
-       │   │           │  │  │  │       │ │  │ │  │ │   │   │ │  │ │  │ │
-       ┤   ├       ────┤  ├──┤  ├───────⊕─●──┼─┼──┼─┼───┼───┼─┼──┼─┼──●─⊕──────
-       │   │           │  │  │  │            │ │  │ │   │   │ │  │ │
-       ┤+=A├       ────┤  ├──┤+1├────────────⊕─●──┼─┼───┼───┼─┼──●─⊕───────────
-       │   │           │  │  │  │                 │ │   │   │ │
-       ┤   ├       ────┤  ├──┤  ├─────────────────⊕─●───┼───●─⊕────────────────
-       │   │        e  │  │  │  │                      ┌┴─┐
-       ┤   ├       ━/━━┥  ┝━━┥  ┝━━━━━━━━━━━━━━━━━━━━━━┥+1┝━━━━━━━━━━━━━━━━━━━━
-       └───┘           └──┘  └──┘                      └──┘
-                       (1)    (2)  -------(3)--------  (4)  --------(5)--------
+
+       ┌───┐
+       ┤   ├       ────────────────×─────────────────────────────────────×─●─
+       │   │                       │                                     │ │
+       ┤   ├       ────────────────┼────×───────────────────────────×─●──┼─┼─
+       │   │                       │    │                           │ │  │ │
+       ┤inp├       ────────────────┼────┼────×─────────────────×─●──┼─┼──┼─┼─
+       │ A │                       │    │    │                 │ │  │ │  │ │
+       ┤   ├       ────────────────┼────┼────┼────×───────×─●──┼─┼──┼─┼──┼─┼─
+       │   │                       │    │    │    │       │ │  │ │  │ │  │ │
+       ┤   ├       ────●────●────●─×──●─×──●─×──●─×───●───×─┼──×─┼──×─┼──×─┼─
+       └─┬─┘           │    │    │ │  │ │  │ │  │ │   │   │ │  │ │  │ │  │ │
+       ┌─┴─┐   =      ┌┴─┐  │    │ │  │ │  │ │  │ │   │   │ │  │ │  │ │  │ │
+       ┤   ├       ───┤  ├──┼────⊕─●──┼─●──┼─┼──┼─┼───┼───┼─┼──┼─┼──┼─┼──●─⊕─
+       │   │          │  │  │         │ │  │ │  │ │   │   │ │  │ │  │ │
+       ┤   ├       ───┤  ├──┼─────────⊕─●──┼─┼──┼─┼───┼───┼─┼──┼─┼──●─⊕──────
+       │   │          │  │  │              │ │  │ │   │   │ │  │ │
+       ┤+=A├       ───┤-1├──┼──────────────⊕─●──┼─┼───┼───┼─┼──●─⊕───────────
+       │   │          │  │  │                   │ │   │   │ │
+       ┤   ├       ───┤  ├──┼───────────────────⊕─●───┼───●─⊕────────────────
+       │   │        e │  │ ┌┴─┐                      ┌┴─┐
+       ┤   ├       ━/━┥  ┝━┥+1┝━━━━━━━━━━━━━━━━━━━━━━┥+1┝━━━━━━━━━━━━━━━━━━━━
+       └───┘          └──┘ └──┘                      └──┘
+                       (1)  (2)  -------(3)--------  (4)  --------(5)--------
     Args:
         input_reg (projectq.types.Qureg):
             The source register. Used as workspace, but ultimately not affected
@@ -158,12 +149,13 @@ def do_addition_with_larger_target_and_no_controls(input_reg, target_reg):
 
 
 def do_addition_no_controls(input_reg, target_reg):
-    # When input is larger, just ignore its high bits.
+    # When input isn't smaller, just ignore its high bits.
     if len(input_reg) >= len(target_reg):
         do_addition_with_same_size_and_no_controls(
             input_reg[:len(target_reg)], target_reg)
         return
 
+    # When input is larger, use a more expensive construction.
     do_addition_with_larger_target_and_no_controls(input_reg, target_reg)
 
 
@@ -179,7 +171,38 @@ def do_addition(input_reg, target_reg, dirty, controls):
         MultiNot | expanded
 
 
+def do_addition_with_all_ops_controlled(eng, input_reg, target_reg, controls):
+    with Control(eng, controls):
+        do_addition_no_controls(input_reg, target_reg)
+
+
 all_defined_decomposition_rules = [
+    # Trivial case: empty input or empty target. Do nothing.
+    DecompositionRule(
+        gate_class=AdditionGate,
+        gate_decomposer=lambda cmd: None,
+        custom_predicate=lambda cmd:
+            len(cmd.qubits[0]) == 0 or len(cmd.qubits[1]) == 0),
+
+    # Trivial case: single target bit. Just a controlled NOT.
+    DecompositionRule(
+        gate_class=AdditionGate,
+        gate_decomposer=lambda cmd:
+            X & cmd.control_qubits & cmd.qubits[0][0] | cmd.qubits[1][0],
+        max_register_sizes=[float('inf'), 1],
+        min_register_sizes=[1, 1]),
+
+    # Trivial case: single input bit. Controlled increment.
+    # Minimum control requirement avoids cyclic decomp w.r.t. increment.
+    DecompositionRule(
+        gate_class=AdditionGate,
+        gate_decomposer=lambda cmd:
+        Increment & cmd.control_qubits & cmd.qubits[0] | cmd.qubits[1],
+        max_register_sizes=[1, float('inf')],
+        min_register_sizes=[1, 1],
+        min_controls=1),
+
+    # Additions without controls can be done inline.
     DecompositionRule(
         gate_class=AdditionGate,
         gate_decomposer=lambda cmd: do_addition_no_controls(
@@ -187,6 +210,7 @@ all_defined_decomposition_rules = [
             target_reg=cmd.qubits[1]),
         max_controls=0),
 
+    # When there's workspace, controlled additions of any size are cheap.
     DecompositionRule(
         gate_class=AdditionGate,
         gate_decomposer=lambda cmd: do_addition(

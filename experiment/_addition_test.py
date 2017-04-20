@@ -2,6 +2,7 @@
 from __future__ import division
 from __future__ import unicode_literals
 
+import itertools
 import random
 
 from projectq import MainEngine
@@ -17,11 +18,11 @@ from . import (
     addition_decompositions,
     increment_decompositions
 )
+from ._test_util import fuzz_permutation_circuit, check_permutation_circuit
 from .addition_decompositions import (
     do_addition_with_same_size_and_no_controls
 )
-from .gates import Add, Subtract, MultiNot
-from ._test_util import fuzz_permutation_circuit
+from .gates import Add, Subtract, MultiNot, IncrementGate, DecrementGate
 
 
 def test_exact_commands_for_small_circuit():
@@ -63,7 +64,35 @@ def test_decompose_big_to_toffolis():
     assert 1000 < len(backend.received_commands) < 10000
 
 
-def test_fuzz_add_same_size():
+def test_check_small_permutations():
+    for in_len, out_len, control_len in itertools.product([0, 1, 2, 3],
+                                                          [0, 1, 2, 3],
+                                                          [0, 1, 2]):
+        dirty_len = 1 if control_len > 0 and in_len > 1 and out_len > 1 else 0
+
+        check_permutation_circuit(
+            register_sizes=[in_len, out_len, control_len, dirty_len],
+            expected_outs_for_ins=lambda a, b, c, d:
+                (a,
+                 b + (a if c + 1 == 1 << control_len else 0),
+                 c,
+                 d),
+            engine_list=[
+                AutoReplacer(DecompositionRuleSet(modules=[
+                    swap2cnot,
+                    multi_not_decompositions,
+                    addition_decompositions,
+                    increment_decompositions
+                ])),
+                LimitedCapabilityEngine(
+                    allow_nots_with_many_controls=True,
+                    allow_classes=[DecrementGate, IncrementGate],
+                )],
+            actions=lambda eng, regs:
+                Add & regs[2] | (regs[0], regs[1]))
+
+
+def test_fuzz_large_add_same_size():
     for _ in range(10):
         n = random.randint(1, 100)
         fuzz_permutation_circuit(
@@ -79,7 +108,7 @@ def test_fuzz_add_same_size():
             actions=lambda eng, regs: Add | (regs[0], regs[1]))
 
 
-def test_fuzz_subtract_into_large():
+def test_fuzz_large_subtract_different_sizes():
     for _ in range(10):
         n = random.randint(1, 15)
         e = random.randint(1, 15)

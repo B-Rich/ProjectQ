@@ -170,12 +170,11 @@ class BasicGate(object):
         """
         qubits = self.make_tuple_of_qureg(qubits)
 
-        for i in range(len(qubits)):
-            for j in range(len(qubits[i]) - 1):
-                assert(qubits[i][j].engine == qubits[i][j + 1].engine)
-            if i < len(qubits) - 1:
-                assert(qubits[i][-1].engine == qubits[i + 1][0].engine)
-        return Command(qubits[0][0].engine, self, qubits)
+        flat_qubits = [q for reg in qubits for q in reg]
+        assert flat_qubits
+        eng = flat_qubits[0].engine
+        assert all(q.engine is eng for q in flat_qubits)
+        return Command(eng, self, qubits)
 
     def __and__(self, controls):
         if isinstance(controls, BasicQubit):

@@ -14,7 +14,15 @@ class PermutationSimulator(BasicEngine):
         BasicEngine.__init__(self)
         self._states = np.array([0], np.int32)
 
-    def _get_permutation(self, quregs):
+    @staticmethod
+    def starting_permutation(register_sizes):
+        sim = PermutationSimulator()
+        from projectq import MainEngine
+        eng = MainEngine(sim, [])
+        quregs = [eng.allocate_qureg(n) for n in register_sizes]
+        return sim.get_permutation(quregs)
+
+    def get_permutation(self, quregs):
         n = sum(len(reg) for reg in quregs)
         if len(self._states) != 1 << n:
             raise ValueError("Need all allocated qubits.")
@@ -29,14 +37,16 @@ class PermutationSimulator(BasicEngine):
             self._states, qureg))
 
     def permutation_equals(self, quregs, permutation_func):
-        actual = self._get_permutation(quregs)
+        actual = self.get_permutation(quregs)
         for i in range(len(self._states)):
             xs = []
             t = 0
             for reg in quregs:
                 xs.append((i >> t) & ((1 << len(reg)) - 1))
                 t += len(reg)
-            if permutation_func(*xs) != tuple(actual[i]):
+            ys = permutation_func(*xs)
+            ys = tuple(i & ((1 << len(a)) - 1) for i, a in zip(ys, quregs))
+            if ys != tuple(actual[i]):
                 return False
         return True
 

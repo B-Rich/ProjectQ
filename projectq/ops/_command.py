@@ -306,23 +306,22 @@ class Command(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def __repr__(self):
+        return "Command(gate={}, qubits={}, controls={})".format(
+            repr(self.gate), repr(self.qubits), repr(self.control_qubits))
+
     def __str__(self):
         """
         Get string representation of this Command object.
         """
-        qubits = self.qubits
-        ctrlqubits = self.control_qubits
-        if len(ctrlqubits) > 0:
-            qubits = (self.control_qubits,) + qubits
-        qstring = ""
-        if len(qubits) == 1:
-            qstring = str(Qureg(qubits[0]))
-        else:
-            qstring = "( "
-            for qreg in qubits:
-                qstring += str(Qureg(qreg))
-                qstring += ", "
-            qstring = qstring[:-2] + " )"
-        #qstring = convert_qubits_to_string(qubits)
-        cstring = "C" * len(ctrlqubits)
-        return cstring + str(self.gate) + " | " + qstring
+        if len(self.control_qubits) > 0:
+            return "Command({} & {} | {} +{})".format(
+                str(self.gate),
+                str(self.control_qubits),
+                str(tuple(self.qubits)),
+                len(self.untouched_qubits()))
+
+        return "Command({} | {} +{})".format(
+            str(self.gate),
+            str(tuple(self.qubits)),
+            len(self.untouched_qubits()))

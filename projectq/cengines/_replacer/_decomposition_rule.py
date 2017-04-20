@@ -28,6 +28,8 @@ class DecompositionRule:
                  custom_predicate=lambda cmd: True,
                  min_workspace=0,
                  max_workspace=float('inf'),
+                 min_register_sizes=None,
+                 max_register_sizes=None,
                  max_controls=float('infinity'),
                  min_controls=0):
         """
@@ -53,6 +55,16 @@ class DecompositionRule:
 
             max_workspace (int):
                 When more than this many 'workspace qubits' are available,
+                the decomposition won't be used.
+
+            min_register_sizes (None|list[int]):
+                When the number of registers doesn't match the size of the
+                list, or any register is smaller than its corresponding entry,
+                the decomposition won't be used.
+
+            max_register_sizes (None|list[int]):
+                When the number of registers doesn't match the size of the
+                list, or any register is larger than its corresponding entry,
                 the decomposition won't be used.
 
             max_controls (int|infinity):
@@ -86,28 +98,42 @@ class DecompositionRule:
         self._max_extra_space = max_workspace
         self._max_controls = max_controls
         self._min_controls = min_controls
+        self._min_register_sizes = min_register_sizes
+        self._max_register_sizes = max_register_sizes
         self._custom_predicate = custom_predicate
 
-    def can_apply_to_command(self, command):
+    def can_apply_to_command(self, cmd):
         """
         Args:
-            command (Command): The command to potentially decompose.
+            cmd (Command): The command to potentially decompose.
         Returns:
             bool: If this decomposition rule can be applied to the command.
         """
-        if not isinstance(command.gate, self.gate_class):
+        if not isinstance(cmd.gate, self.gate_class):
             return False
 
-        controls = len(command.control_qubits)
+        controls = len(cmd.control_qubits)
         if controls < self._min_controls:
             return False
         if controls > self._max_controls:
             return False
 
-        extra_space = len(command.untouched_qubits())
+        extra_space = len(cmd.untouched_qubits())
         if extra_space < self._min_extra_space:
             return False
         if extra_space > self._max_extra_space:
             return False
 
-        return self._custom_predicate(command)
+        if self._max_register_sizes is not None and (
+                len(cmd.qubits) != len(self._max_register_sizes) or
+                any(len(r) > n
+                    for r, n in zip(cmd.qubits, self._max_register_sizes))):
+            return False
+
+        if self._max_register_sizes is not None and (
+                len(cmd.qubits) != len(self._min_register_sizes) or
+                any(len(r) < n
+                    for r, n in zip(cmd.qubits, self._min_register_sizes))):
+            return False
+
+        return self._custom_predicate(cmd)
