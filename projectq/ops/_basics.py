@@ -170,7 +170,8 @@ class BasicGate(object):
         qubits = self.make_tuple_of_qureg(qubits)
 
         flat_qubits = [q for reg in qubits for q in reg]
-        assert flat_qubits
+        if len(flat_qubits) == 0:
+            return None
         eng = flat_qubits[0].engine
         assert all(q.engine is eng for q in flat_qubits)
         return Command(eng, self, qubits)
@@ -196,7 +197,8 @@ class BasicGate(object):
                     a tuple of Qubit or Qureg objects (can be mixed).
         """
         cmd = self.generate_command(qubits)
-        apply_command(cmd)
+        if cmd is not None:
+            apply_command(cmd)
 
     def __eq__(self, other):
         """ Return True if equal (i.e., instance of same class). """

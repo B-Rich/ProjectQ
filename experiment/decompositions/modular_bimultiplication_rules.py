@@ -11,7 +11,8 @@ from ..gates import (
 
 def do_bimultiplication(gate, forward_reg, inverse_reg, controls):
     """
-    Reversibly adds one register into another of the same size.
+    Reversibly multiplies one register by a constant and another register by
+    the negation of the modular multiplicative inverse of that constant.
 
     N: len(input_reg) + len(target_reg) + len(controls)
     Size: O(N lg N)

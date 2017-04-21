@@ -94,7 +94,6 @@ def check_permutation_circuit(register_sizes,
     registers = [eng.allocate_qureg(size) for size in register_sizes]
 
     # Simulate.
-    rec.restart_recording()
     actions(eng, registers)
 
     # Compare.
@@ -107,14 +106,14 @@ def check_permutation_circuit(register_sizes,
         print("Differing Permutations [input --> actual != expected]:")
         starts = PermutationSimulator.starting_permutation(register_sizes)
         for a, b in zip(starts, sim.get_permutation(registers)):
-            example_count += 1
-            if example_count > 10:
-                print("   (...)")
-                break
             b = list(b)
             c = permutation(register_sizes, a)
             c = [i & ((1 << v) - 1) for i, v in zip(c, register_sizes)]
             if not np.array_equal(c, b):
+                example_count += 1
+                if example_count > 10:
+                    print("   (...)")
+                    break
                 a = tuple(a)
                 b = tuple(b)
                 c = tuple(c)

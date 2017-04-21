@@ -27,7 +27,7 @@ def do_pivot_flip(pivot_reg, target_reg, controls, dirty_qubit):
         Subtract | (pivot_reg, target_reg + [dirty_qubit])
         Add | (pivot_reg, target_reg)
 
-        # Double flip.
+        # Conditioned double flip.
         Subtract & dirty_qubit & controls | (pivot_reg, target_reg)
         X & dirty_qubit & controls | target_reg
 
@@ -47,7 +47,7 @@ def do_const_pivot_flip(gate, target_reg, controls, dirty_qubit):
         OffsetGate(-gate.pivot) | target_reg + [dirty_qubit]
         OffsetGate(gate.pivot) | target_reg
 
-        # Double flip.
+        # Conditioned double flip.
         OffsetGate(-gate.pivot) & dirty_qubit & controls | target_reg
         X & dirty_qubit & controls | target_reg
 

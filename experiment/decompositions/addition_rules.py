@@ -88,7 +88,6 @@ def do_addition_with_larger_target_and_no_controls(input_reg, target_reg):
     Size: O(N)
     Depth: O(N)
     Diagram:
-
        ┌───┐
        ┤   ├       ────────────────×─────────────────────────────────────×─●─
        │   │                       │                                     │ │
