@@ -8,7 +8,8 @@ from ..extensions import BasicMathGate2
 class ModularDoubleGate(BasicMathGate2):
     def __init__(self, modulus):
         if modulus % 2 == 0:
-            raise ValueError("Doubling is irreversible modulo even values.")
+            raise ValueError(
+                'Doubling is irreversible modulo {}.'.format(modulus))
         BasicMathGate2.__init__(self)
         self.modulus = modulus
 

@@ -57,7 +57,7 @@ def do_modular_scaled_addition(gate, input_reg, target_reg, controls):
         halve | target_reg
 
     for i in range(n)[::-1]:
-        if n > 0:
+        if i != n - 1:
             double | target_reg
         offset & controls & input_reg[i] | target_reg
 
