@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+from projectq.ops import SelfInverseGate, NotMergeable
 from ..extensions import BasicMathGate2
 
 
-class MultiNotGate(BasicMathGate2):
+class MultiNotGate(BasicMathGate2, SelfInverseGate):
     def do_operation(self, x):
         return ~x,
 

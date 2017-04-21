@@ -210,6 +210,14 @@ class Qureg(list):
         else:
             return "Qureg" + str([q.id for q in self])
 
+    def __repr__(self):
+        if len(self) == 0:
+            return "Qureg[]"
+        start_id = self[0].id
+        if all(self[i].id == self[0].id + i for i in range(len(self))):
+            return "Qureg[{}:{}]".format(start_id, start_id + len(self))
+        return str(self)
+
     @property
     def engine(self):
         """

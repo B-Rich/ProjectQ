@@ -19,6 +19,8 @@ The InstructionFilter can be used to further specify which gates to
 replace/keep.
 """
 
+from __future__ import unicode_literals
+
 from projectq.cengines import (BasicEngine,
                                ForwarderEngine,
                                CommandModifier)
@@ -151,8 +153,8 @@ class AutoReplacer(BasicEngine):
                     decomp_list.append(d)
 
             if len(decomp_list) == 0:
-                raise NoGateDecompositionError("\nNo replacement found for "
-                                               + str(cmd) + "!")
+                raise NoGateDecompositionError(
+                    'No replacement found for {}'.format(cmd))
 
             # use decomposition chooser to determine the best decomposition
             chosen_decomp = self._decomp_chooser(cmd, decomp_list)

@@ -36,6 +36,8 @@ The command then gets sent to the MainEngine via the
 apply wrapper (apply_command).
 """
 
+from __future__ import unicode_literals
+
 from copy import deepcopy
 
 import projectq
@@ -316,12 +318,12 @@ class Command(object):
         """
         if len(self.control_qubits) > 0:
             return "Command({} & {} | {} +{})".format(
-                str(self.gate),
-                str(self.control_qubits),
-                str(tuple(self.qubits)),
+                self.gate,
+                Qureg(self.control_qubits),
+                tuple(Qureg(e) for e in self.qubits),
                 len(self.untouched_qubits()))
 
         return "Command({} | {} +{})".format(
-            str(self.gate),
-            str(tuple(self.qubits)),
+            self.gate,
+            tuple(Qureg(e) for e in self.qubits),
             len(self.untouched_qubits()))

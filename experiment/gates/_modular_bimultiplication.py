@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from projectq.ops import NotMergeable
 from ..extensions import BasicMathGate2
 
 
-class ConstModularDoubleMultiplicationGate(BasicMathGate2):
+class ModularBimultiplicationGate(BasicMathGate2):
     def __init__(self, factor, modulus):
-        inverse_factor = _multiplicative_inverse(factor, modulus)
+        inverse_factor = multiplicative_inverse(factor, modulus)
         if inverse_factor is None:
             raise ValueError("Irreversible.")
 
@@ -23,15 +22,12 @@ class ConstModularDoubleMultiplicationGate(BasicMathGate2):
                 (y * -self.inverse_factor) % self.modulus)
 
     def get_inverse(self):
-        return ConstModularDoubleMultiplicationGate(
+        return ModularBimultiplicationGate(
             self.inverse_factor,
             self.modulus)
 
-    def get_merged(self, other):
-        raise NotMergeable()
-
     def __repr__(self):
-        return 'ConstModularDoubleMultiplication({}, modulus={})'.format(
+        return 'ModularBimultiplicationGate({}, modulus={})'.format(
             self.factor, self.modulus)
 
     def __str__(self):
@@ -44,13 +40,13 @@ class ConstModularDoubleMultiplicationGate(BasicMathGate2):
         ]
 
 
-def _extended_gcd(a, b):
+def extended_gcd(a, b):
     if a == 0:
         return b, 0, 1
-    g, y, x = _extended_gcd(b % a, a)
+    g, y, x = extended_gcd(b % a, a)
     return g, x - (b // a) * y, y
 
 
-def _multiplicative_inverse(a, m):
-    g, x, y = _extended_gcd(a, m)
+def multiplicative_inverse(a, m):
+    g, x, y = extended_gcd(a, m)
     return None if g != 1 else x % m

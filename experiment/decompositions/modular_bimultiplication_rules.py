@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 from projectq.cengines import DecompositionRule
 from ..gates import (
-    ConstModularDoubleMultiplicationGate,
+    ModularBimultiplicationGate,
     ModularAdditionGate,
     ModularSubtractionGate,
     ModularScaledAdditionGate,
@@ -14,13 +14,9 @@ def do_bimultiplication(gate, forward_reg, inverse_reg, controls):
     """
     Reversibly adds one register into another of the same size.
 
-    N: len(input_reg) + len(target_ref)
+    N: len(input_reg) + len(target_reg) + len(controls)
     Size: O(N lg N)
     Depth: O(N)
-
-    Sources:
-        Craig Gidney 2017
-
     Diagram:
         c                  c
        ━/━━━━━●━━━━       ━/━━━━━●━━━━━━━●━━━━━━━●━━━━━━━━●━━━━━●━━━━━●━━━
@@ -30,7 +26,7 @@ def do_bimultiplication(gate, forward_reg, inverse_reg, controls):
        ━/━┥×K⁻¹%R┝━       ━/━━┥+AK%R┝┥   A   ┝┥+AK%R┝━━┥+A%R┝┥  A ┝┥+A%R┝━
           └──────┘            └─────┘└───────┘└─────┘  └────┘└────┘└────┘
     Args:
-        gate (ConstModularDoubleMultiplicationGate):
+        gate (ModularBimultiplicationGate):
             The gate being decomposed.
         forward_reg (projectq.types.Qureg):
             The register to mod-multiply by the forward factor.
@@ -40,10 +36,8 @@ def do_bimultiplication(gate, forward_reg, inverse_reg, controls):
             Control qubits.
     """
     assert len(forward_reg) == len(inverse_reg)
-    assert 1 << len(forward_reg) >= gate.modulus
+    assert 1 << (len(forward_reg) - 1) < gate.modulus <= 1 << len(forward_reg)
 
-    def f(x):
-        return ModularScaledAdditionGate(x, gate.modulus)
     scale_add = ModularScaledAdditionGate(gate.factor, gate.modulus)
     scale_sub = ModularScaledAdditionGate(-gate.inverse_factor, gate.modulus)
     add = ModularAdditionGate(gate.modulus)
@@ -60,7 +54,7 @@ def do_bimultiplication(gate, forward_reg, inverse_reg, controls):
 
 all_defined_decomposition_rules = [
     DecompositionRule(
-        gate_class=ConstModularDoubleMultiplicationGate,
+        gate_class=ModularBimultiplicationGate,
         gate_decomposer=lambda cmd: do_bimultiplication(
             cmd.gate,
             forward_reg=cmd.qubits[0],

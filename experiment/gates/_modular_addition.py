@@ -48,3 +48,25 @@ class ModularSubtractionGate(BasicMathGate2):
 
     def ascii_register_labels(self):
         return ['A', '−A (mod {})'.format(self.modulus)]
+
+
+class ModularOffsetGate(BasicMathGate2):
+    def __init__(self, offset, modulus):
+        BasicMathGate2.__init__(self)
+        self.offset = offset % modulus
+        self.modulus = modulus
+
+    def do_operation(self, x):
+        if x >= self.modulus:
+            return x,
+        return (x + self.offset) % self.modulus,
+
+    def get_inverse(self):
+        return ModularOffsetGate(-self.offset, self.modulus)
+
+    def __repr__(self):
+        return 'ModularOffsetGate({}, modulus={})'.format(self.offset,
+                                                          self.modulus)
+
+    def __str__(self):
+        return '+{} % {}'.format(self.offset, self.modulus)
