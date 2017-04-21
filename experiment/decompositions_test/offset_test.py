@@ -111,7 +111,7 @@ def test_check_offset_permutations_small():
 def test_fuzz_offset_permutations_large():
     for _ in range(10):
         n = random.randint(0, 50)
-        nc = random.randint(0, 3)
+        nc = random.randint(0, 2)
         offset = random.randint(0, 1 << n)
         dirty = 1
         fuzz_permutation_circuit(

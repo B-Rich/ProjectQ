@@ -8,7 +8,8 @@ from ..gates import (
     PivotFlipGate,
     OffsetGate,
     Add,
-    Subtract
+    Subtract,
+    MultiNot,
 )
 
 
@@ -29,7 +30,7 @@ def do_pivot_flip(pivot_reg, target_reg, controls, dirty_qubit):
 
         # Conditioned double flip.
         Subtract & dirty_qubit & controls | (pivot_reg, target_reg)
-        X & dirty_qubit & controls | target_reg
+        MultiNot & dirty_qubit & controls | target_reg
 
 
 def do_const_pivot_flip(gate, target_reg, controls, dirty_qubit):
@@ -49,7 +50,7 @@ def do_const_pivot_flip(gate, target_reg, controls, dirty_qubit):
 
         # Conditioned double flip.
         OffsetGate(-gate.pivot) & dirty_qubit & controls | target_reg
-        X & dirty_qubit & controls | target_reg
+        MultiNot & dirty_qubit & controls | target_reg
 
 
 all_defined_decomposition_rules = [
