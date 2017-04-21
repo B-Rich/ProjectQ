@@ -24,7 +24,7 @@ def test_full_cnot_permutations_small():
 
         check_quantum_permutation_circuit(
             register_size=n,
-            permutation_func=lambda i:
+            permutation_func=lambda ns, (i,):
                 i ^ (1 if control_mask & i == control_mask else 0),
             engine_list=[
                 AutoReplacer(DecompositionRuleSet(modules=[
@@ -44,13 +44,13 @@ def test_full_cnot_permutations_small():
 
 
 def test_full_increment_permutations_small():
-    for n in [1, 2, 3, 4, 7, 9]:
+    for n in [1, 2, 3, 4, 7]:
         for c in [0, 1, 2]:
             control_mask = (1 << c) - 1
 
             check_quantum_permutation_circuit(
                 register_size=c + n,
-                permutation_func=lambda i:
+                permutation_func=lambda ns, (i,):
                     i + (1 << c if control_mask & i == control_mask else 0),
                 engine_list=[
                     AutoReplacer(DecompositionRuleSet(modules=[

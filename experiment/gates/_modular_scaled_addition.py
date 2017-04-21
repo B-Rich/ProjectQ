@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from projectq.ops import BasicMathGate2, NotMergeable
+from ..extensions import BasicMathGate2
 
 
 class ModularScaledAdditionGate(BasicMathGate2):
@@ -19,9 +19,6 @@ class ModularScaledAdditionGate(BasicMathGate2):
         return ModularScaledAdditionGate(
             -self.factor % self.modulus,
             self.modulus)
-
-    def get_merged(self, other):
-        raise NotMergeable()
 
     def __repr__(self):
         return 'ModularScaledAdditionGate({}, modulus={})'.format(

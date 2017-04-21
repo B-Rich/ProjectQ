@@ -118,7 +118,7 @@ def test_permutations_small():
 
             check_permutation_circuit(
                 register_sizes=[targets, controls, dirty],
-                expected_outs_for_ins=lambda t, c, d:
+                permutation=lambda ns, (t, c, d):
                     (t ^ (((1 << targets) - 1)
                           if c + 1 == 1 << controls
                           else 0),
@@ -136,10 +136,10 @@ def test_permutations_small():
 def test_fuzz_large():
     for _ in range(10):
         targets = random.randint(2, 100)
-        controls = random.randint(0, 100)
+        controls = random.randint(0, 4)
         fuzz_permutation_circuit(
             register_sizes=[targets, controls],
-            expected_outs_for_ins=lambda t, c:
+            permutation=lambda ns, (t, c):
                 (t ^ (((1 << targets) - 1) if c+1 == 1 << controls else 0), c),
             engine_list=[
                 AutoReplacer(DecompositionRuleSet(modules=[

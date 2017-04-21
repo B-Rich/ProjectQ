@@ -12,3 +12,5 @@ from ._modular_scaled_addition import ModularScaledAdditionGate
 from ._multi_not import MultiNot, MultiNotGate
 from ._phase_gradient import PhaseGradientGate, PhaseGradient
 from ._vector_phaser import VectorPhaserGate, Z
+from ._rotate_bits import RotateBitsGate, LeftRotateBits, RightRotateBits
+from ._reverse_bits import ReverseBitsGate, ReverseBits

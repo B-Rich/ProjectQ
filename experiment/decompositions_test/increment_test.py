@@ -41,7 +41,7 @@ def test_fuzz_do_increment_with_no_controls_and_n_dirty():
     for _ in range(10):
         fuzz_permutation_circuit(
             register_sizes=[4, 4],
-            expected_outs_for_ins=lambda a, b: (a + 1, b),
+            permutation=lambda ns, (a, b): (a + 1, b),
             engine_list=[AutoReplacer(DecompositionRuleSet(modules=[
                 addition_rules,
                 multi_not_rules,
@@ -78,7 +78,7 @@ def test_fuzz_controlled_increment():
         satisfy = (1 << control_size) - 1
         fuzz_permutation_circuit(
             register_sizes=[control_size, n, 2],
-            expected_outs_for_ins=lambda c, t, d:
+            permutation=lambda ns, (c, t, d):
                 (c, t + (1 if c == satisfy else 0), d),
             engine_list=[
                 AutoReplacer(DecompositionRuleSet(modules=[

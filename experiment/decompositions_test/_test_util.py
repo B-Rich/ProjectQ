@@ -23,14 +23,26 @@ def check_phase_circuit(register_sizes,
                         expected_turns,
                         engine_list,
                         actions):
+    """
+    Args:
+        register_sizes (list[int]):
+        expected_turns (function(register_sizes: tuple[int],
+                                 register_vals: tuple[int])):
+        engine_list (list[projectq.cengines.BasicEngine]):
+        actions (function(eng: MainEngine, registers: list[Qureg])):
+        register_limits (list[int]):
+    """
+
     sim = Simulator()
-    eng = MainEngine(backend=sim, engine_list=engine_list)
+    rec = DummyEngine(save_commands=True)
+    eng = MainEngine(backend=sim, engine_list=engine_list + [rec])
     registers = [eng.allocate_qureg(size) for size in register_sizes]
 
     # Simulate all.
     for reg in registers:
         for q in reg:
             H | q
+    rec.restart_recording()
     actions(eng, registers)
 
     # Compare.
@@ -44,12 +56,11 @@ def check_phase_circuit(register_sizes,
         vals = tuple(vals)
 
         actual_factor = state[i]
-        expected_turn = expected_turns(vals, register_sizes)
+        expected_turn = expected_turns(register_sizes, vals)
         actual_turn = cmath.phase(state[i]) / (2 * math.pi)
         delta_turn = abs((actual_turn - expected_turn + 0.5) % 1 - 0.5)
         if not (delta_turn < 0.00001):
-            print(actions_as_ascii_diagram(
-                register_sizes, engine_list, actions))
+            print(commands_to_ascii_circuit(rec.received_commands))
             print("Register Sizes", register_sizes)
             print("Conflicting state: {}".format(vals))
             print("Expected phase: {} deg".format(float(expected_turn)*360))
@@ -59,40 +70,86 @@ def check_phase_circuit(register_sizes,
 
 
 def check_permutation_circuit(register_sizes,
-                              expected_outs_for_ins,
+                              permutation,
                               engine_list,
                               actions):
+    """
+    Args:
+        register_sizes (list[int]):
+        permutation (function(register_sizes: tuple[int],
+                                        register_vals: tuple[int])
+                                        : tuple[int]):
+        engine_list (list[projectq.cengines.BasicEngine]):
+        actions (function(eng: MainEngine, registers: list[Qureg])):
+    """
 
-    backend = PermutationSimulator()
-    eng = MainEngine(backend=backend, engine_list=engine_list)
+    sim = PermutationSimulator()
+    rec = DummyEngine(save_commands=True)
+    eng = MainEngine(backend=sim, engine_list=engine_list + [rec])
     registers = [eng.allocate_qureg(size) for size in register_sizes]
 
     # Simulate.
+    rec.restart_recording()
     actions(eng, registers)
 
     # Compare.
-    permutation_matches = backend.permutation_equals(registers,
-                                                     expected_outs_for_ins)
+    permutation_matches = sim.permutation_equals(registers,
+                                                 permutation)
     if not permutation_matches:
-        print(actions_as_ascii_diagram(register_sizes, engine_list, actions))
+        example_count = 0
+        print(commands_to_ascii_circuit(rec.received_commands))
         print("Register Sizes", register_sizes)
-        print("Differing Permutations [input --> expected != actual]:")
+        print("Differing Permutations [input --> actual != expected]:")
         starts = PermutationSimulator.starting_permutation(register_sizes)
-        for a, b in zip(starts, backend.get_permutation(registers)):
+        for a, b in zip(starts, sim.get_permutation(registers)):
+            example_count += 1
+            if example_count > 10:
+                print("   (...)")
+                break
             b = list(b)
-            c = expected_outs_for_ins(*a)
+            c = permutation(register_sizes, a)
             c = [i & ((1 << v) - 1) for i, v in zip(c, register_sizes)]
             if not np.array_equal(c, b):
-                print("   " + str(a) + " --> " + str(c) + " != " + str(b))
+                a = tuple(a)
+                b = tuple(b)
+                c = tuple(c)
+                print("   " + str(a) + " --> " + str(b) + " != " + str(c))
     assert permutation_matches
+
+
+def bit_to_state_permutation(bit_permutation):
+    """
+    Args:
+        bit_permutation (function(reg_sizes: tuple[int],
+                                  bit_position: int,
+                                  other_vals: tuple[int]) : int):
+
+    Returns:
+        function(reg_sizes: tuple[int], reg_vals: tuple[int]) : tuple[int]):
+    """
+    def permute(sizes, vals):
+        permuted = sum(
+            ((vals[0] >> i) & 1) << bit_permutation(sizes, i, vals[1:])
+            for i in range(sizes[0]))
+        return (permuted,) + tuple(vals[1:])
+    return permute
 
 
 def check_quantum_permutation_circuit(register_size,
                                       permutation_func,
                                       engine_list,
                                       actions):
+    """
+    Args:
+        register_size (int):
+        permutation_func (function(register_sizes: tuple[int],
+                                   register_vals: tuple[int]) : tuple[int]):
+        engine_list (list[projectq.cengines.BasicEngine]):
+        actions (function(eng: MainEngine, registers: list[Qureg])):
+    """
     sim = Simulator()
-    eng = MainEngine(backend=sim, engine_list=engine_list)
+    rec = DummyEngine(save_commands=True)
+    eng = MainEngine(backend=sim, engine_list=engine_list + [rec])
 
     reg = eng.allocate_qureg(register_size)
 
@@ -101,6 +158,8 @@ def check_quantum_permutation_circuit(register_size,
         Rz(math.pi / 2**i) | reg[i]
     pre_state = np.array(sim.cheat()[1])
 
+    # Simulate.
+    rec.restart_recording()
     actions(eng, [reg])
 
     post_state = np.array(sim.cheat()[1])
@@ -111,10 +170,9 @@ def check_quantum_permutation_circuit(register_size,
     pre_state *= denom
     post_state *= denom
     for i in range(len(pre_state)):
-        j = permutation_func(i) & ((1 << len(reg)) - 1)
+        j = permutation_func([register_size], [i]) & ((1 << len(reg)) - 1)
         if not (abs(post_state[j] - pre_state[i]) < 0.000000001):
-            print(actions_as_ascii_diagram(
-                [register_size], engine_list, actions))
+            print(commands_to_ascii_circuit(rec.received_commands))
             print("Input", i)
             print("Expected Output", j)
             print("Input Amp at " + str(i), pre_state[i])
@@ -123,19 +181,32 @@ def check_quantum_permutation_circuit(register_size,
 
 
 def fuzz_permutation_circuit(register_sizes,
-                             expected_outs_for_ins,
+                             permutation,
                              engine_list,
                              actions,
                              register_limits=None):
+    """
+    Args:
+        register_sizes (list[int]):
+        permutation (function(register_vals: tuple[int],
+                                        register_sizes: tuple[int])
+                                        : tuple[int]):
+        engine_list (list[projectq.cengines.BasicEngine]):
+        actions (function(eng: MainEngine, registers: list[Qureg])):
+        register_limits (list[int]):
+    """
+
     n = len(register_sizes)
     if register_limits is None:
         register_limits = [1 << size for size in register_sizes]
     inputs = [random.randint(0, limit - 1) for limit in register_limits]
     outputs = [e % (1 << d)
-               for e, d in zip(expected_outs_for_ins(*inputs), register_sizes)]
+               for e, d in zip(permutation(register_sizes, inputs),
+                               register_sizes)]
 
-    backend = ClassicalSimulator()
-    eng = MainEngine(backend=backend, engine_list=engine_list)
+    sim = ClassicalSimulator()
+    rec = DummyEngine(save_commands=True)
+    eng = MainEngine(backend=sim, engine_list=engine_list + [rec])
     registers = [eng.allocate_qureg(size) for size in register_sizes]
 
     # Encode inputs.
@@ -145,12 +216,13 @@ def fuzz_permutation_circuit(register_sizes,
                 X | registers[i][b]
 
     # Simulate.
+    rec.restart_recording()
     actions(eng, registers)
 
     # Compare outputs.
-    actual_outputs = [backend.read_register(registers[i]) for i in range(n)]
+    actual_outputs = [sim.read_register(registers[i]) for i in range(n)]
     if outputs != actual_outputs:
-        print(actions_as_ascii_diagram(register_sizes, engine_list, actions))
+        print(commands_to_ascii_circuit(rec.received_commands))
         print("Register Sizes", register_sizes)
         print("Inputs", inputs)
         print("Expected Outputs", outputs)
@@ -159,6 +231,14 @@ def fuzz_permutation_circuit(register_sizes,
 
 
 def actions_as_ascii_diagram(register_sizes, engine_list, actions):
+    """
+    Args:
+        register_sizes (list[int]):
+        engine_list (list[projectq.cengines.BasicEngine]):
+        actions (function(eng: MainEngine, registers: list[Qureg])):
+    Returns:
+        str:
+    """
     backend = DummyEngine(save_commands=True)
     eng = MainEngine(backend=backend, engine_list=engine_list)
     registers = [eng.allocate_qureg(n) for n in register_sizes]
@@ -168,6 +248,14 @@ def actions_as_ascii_diagram(register_sizes, engine_list, actions):
 
 
 def actions_as_latex_diagram(register_sizes, engine_list, actions):
+    """
+    Args:
+        register_sizes (list[int]):
+        engine_list (list[projectq.cengines.BasicEngine]):
+        actions (function(eng: MainEngine, registers: list[Qureg])):
+    Returns:
+        str:
+    """
     backend = CircuitDrawer()
     eng = MainEngine(backend=backend, engine_list=engine_list)
     registers = [eng.allocate_qureg(n) for n in register_sizes]

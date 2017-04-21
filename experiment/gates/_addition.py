@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from projectq.ops import BasicMathGate2, NotMergeable
+from ..extensions import BasicMathGate2
 
 
 class AdditionGate(BasicMathGate2):
@@ -10,9 +10,6 @@ class AdditionGate(BasicMathGate2):
 
     def get_inverse(self):
         return SubtractionGate()
-
-    def get_merged(self, other):
-        raise NotMergeable()
 
     def __repr__(self):
         return 'Add'
@@ -30,9 +27,6 @@ class SubtractionGate(BasicMathGate2):
 
     def get_inverse(self):
         return AdditionGate()
-
-    def get_merged(self, other):
-        raise NotMergeable()
 
     def __repr__(self):
         return 'Subtract'

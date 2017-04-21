@@ -72,7 +72,7 @@ def test_check_small_permutations():
 
         check_permutation_circuit(
             register_sizes=[in_len, out_len, control_len, dirty_len],
-            expected_outs_for_ins=lambda a, b, c, d:
+            permutation=lambda ns, (a, b, c, d):
                 (a,
                  b + (a if c + 1 == 1 << control_len else 0),
                  c,
@@ -97,7 +97,7 @@ def test_fuzz_large_add_same_size():
         n = random.randint(1, 100)
         fuzz_permutation_circuit(
             register_sizes=[n, n],
-            expected_outs_for_ins=lambda a, b: (a, b + a),
+            permutation=lambda ns, (a, b): (a, b + a),
             engine_list=[
                 AutoReplacer(DecompositionRuleSet(modules=[
                     swap2cnot,
@@ -114,7 +114,7 @@ def test_fuzz_large_subtract_different_sizes():
         e = random.randint(1, 15)
         fuzz_permutation_circuit(
             register_sizes=[n, n + e, 2],
-            expected_outs_for_ins=lambda a, b, d: (a, b - a, d),
+            permutation=lambda ns, (a, b, d): (a, b - a, d),
             engine_list=[
                 AutoReplacer(DecompositionRuleSet(modules=[
                     swap2cnot,

@@ -37,14 +37,23 @@ class PermutationSimulator(BasicEngine):
             self._states, qureg))
 
     def permutation_equals(self, quregs, permutation_func):
+        """
+        Args:
+            quregs (list[Qureg]):
+            permutation_func (function(reg_sizes: tuple[int],
+                                       reg_vals: tuple[int]) : tuple[int]):
+        Returns:
+            bool:
+        """
         actual = self.get_permutation(quregs)
+        ns = tuple(len(reg) for reg in quregs)
         for i in range(len(self._states)):
             xs = []
             t = 0
             for reg in quregs:
                 xs.append((i >> t) & ((1 << len(reg)) - 1))
                 t += len(reg)
-            ys = permutation_func(*xs)
+            ys = permutation_func(ns, xs)
             ys = tuple(i & ((1 << len(a)) - 1) for i, a in zip(ys, quregs))
             if ys != tuple(actual[i]):
                 return False

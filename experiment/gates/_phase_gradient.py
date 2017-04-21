@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 from fractions import Fraction
 
-from projectq.ops import BasicGate, NotMergeable
+from projectq.ops import BasicGate
 
 
 class PhaseGradientGate(BasicGate):
@@ -16,9 +16,6 @@ class PhaseGradientGate(BasicGate):
 
     def get_inverse(self):
         return PhaseGradientGate(-self.factor)
-
-    def get_merged(self, other):
-        raise NotMergeable()
 
     def __repr__(self):
         if self.factor == 1: return "PhaseGradient"

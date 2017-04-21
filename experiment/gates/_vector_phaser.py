@@ -7,7 +7,7 @@ import math
 
 import numpy as np
 
-from projectq.ops import BasicGate, NotMergeable
+from projectq.ops import BasicGate
 
 
 def _exp_pi_i(f):
@@ -45,9 +45,6 @@ class VectorPhaserGate(BasicGate):
 
     def get_inverse(self):
         return VectorPhaserGate(self.vector, -self.half_turns)
-
-    def get_merged(self, other):
-        raise NotMergeable()
 
     def __pow__(self, power):
         """

@@ -69,7 +69,7 @@ def test_fuzz_double_multiplication():
         fuzz_permutation_circuit(
             register_sizes=[n, cn, n],
             register_limits=[mod, 1 << cn, mod],
-            expected_outs_for_ins=lambda a, c, b:
+            permutation=lambda ns, (a, c, b):
                 (a, c, b)
                 if c != 2**cn - 1
                 else (a*5 % 1001, c, b*801 % 1001),

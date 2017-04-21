@@ -28,7 +28,12 @@ def _on_wire_pattern(role):
             else '──┼─')
 
 
-def _between_wire_cols(has_controls, used_indices, roles, index_to_id, w,
+def _between_wire_cols(has_controls,
+                       used_indices,
+                       swap_line,
+                       roles,
+                       index_to_id,
+                       w,
                        border):
     between_wires = []
     prev_role = {}
@@ -42,6 +47,8 @@ def _between_wire_cols(has_controls, used_indices, roles, index_to_id, w,
 
         has_control_line = (has_controls and
                             min(used_indices) < i <= max(used_indices))
+        if swap_line[0] < i <= swap_line[1]:
+            has_control_line = True
         pattern = _between_wire_pattern(prev_role, role)
         space = pattern[1] if border else ' '
         mid = (space if not has_control_line
@@ -57,6 +64,7 @@ def _between_wire_cols(has_controls, used_indices, roles, index_to_id, w,
 def _on_wire_cols(labels,
                   has_controls,
                   used_indices,
+                  swap_line,
                   roles,
                   notes,
                   index_to_id,
@@ -84,6 +92,8 @@ def _on_wire_cols(labels,
         pattern = _on_wire_pattern(role)
         has_control_line = (has_controls and
                             min(used_indices) <= i <= max(used_indices))
+        if swap_line[0] <= i <= swap_line[1]:
+            has_control_line = True
 
         space = pattern[1] if border else '─'
         control_line = pattern[2]
@@ -143,8 +153,16 @@ def _wire_col(cmd, id_to_index, index_to_id):
         else 2 if sum(len(reg) for reg in cmd.qubits) == 1
         else 6)
 
+    swap_line = [-1, -1] if cmd.gate.__class__ != SwapGate else [
+        min(id_to_index[cmd.qubits[0][0].id],
+            id_to_index[cmd.qubits[1][0].id]),
+        max(id_to_index[cmd.qubits[0][0].id],
+            id_to_index[cmd.qubits[1][0].id]),
+    ]
+
     between_wires = _between_wire_cols(len(cmd.control_qubits) > 0,
                                        used_indices,
+                                       swap_line,
                                        roles,
                                        index_to_id,
                                        w,
@@ -152,6 +170,7 @@ def _wire_col(cmd, id_to_index, index_to_id):
     on_wires = _on_wire_cols(labels,
                              len(cmd.control_qubits) > 0,
                              used_indices,
+                             swap_line,
                              roles,
                              notes,
                              index_to_id,

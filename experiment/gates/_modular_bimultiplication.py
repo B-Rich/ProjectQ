@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from projectq.ops import BasicMathGate2, NotMergeable
+from projectq.ops import NotMergeable
+from ..extensions import BasicMathGate2
 
 
 class ConstModularDoubleMultiplicationGate(BasicMathGate2):
