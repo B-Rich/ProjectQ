@@ -10,7 +10,6 @@ import random
 import numpy as np
 
 from projectq import MainEngine
-from projectq.backends import CircuitDrawer
 from projectq.backends import (
     ClassicalSimulator, PermutationSimulator, Simulator
 )
@@ -45,8 +44,14 @@ def check_phase_circuit(register_sizes,
     rec.restart_recording()
     actions(eng, registers)
 
+    state = np.array(sim.cheat()[1])
+    magnitude_factor = math.sqrt(len(state))
+    actions = list(rec.received_commands)
+    for reg in registers:
+        for q in reg:
+            Measure | q
+
     # Compare.
-    state = sim.cheat()[1]
     for i in range(len(state)):
         vals = []
         t = 0
@@ -60,12 +65,12 @@ def check_phase_circuit(register_sizes,
         actual_turn = cmath.phase(state[i]) / (2 * math.pi)
         delta_turn = abs((actual_turn - expected_turn + 0.5) % 1 - 0.5)
         if not (delta_turn < 0.00001):
-            print(commands_to_ascii_circuit(rec.received_commands))
+            print(commands_to_ascii_circuit(actions))
             print("Register Sizes", register_sizes)
             print("Conflicting state: {}".format(vals))
             print("Expected phase: {} deg".format(float(expected_turn)*360))
             print("Actual phase: {} deg".format(actual_turn*360))
-        assert abs(abs(actual_factor * math.sqrt(len(state))) - 1) < 0.00001
+        assert abs(abs(actual_factor * magnitude_factor) - 1) < 0.00001
         assert delta_turn < 0.00001
 
 
@@ -161,6 +166,7 @@ def check_quantum_permutation_circuit(register_size,
     # Simulate.
     rec.restart_recording()
     actions(eng, [reg])
+    actions = list(rec.received_commands)
 
     post_state = np.array(sim.cheat()[1])
     for q in reg:
@@ -172,7 +178,7 @@ def check_quantum_permutation_circuit(register_size,
     for i in range(len(pre_state)):
         j = permutation_func([register_size], [i]) & ((1 << len(reg)) - 1)
         if not (abs(post_state[j] - pre_state[i]) < 0.000000001):
-            print(commands_to_ascii_circuit(rec.received_commands))
+            print(commands_to_ascii_circuit(actions))
             print("Input", i)
             print("Expected Output", j)
             print("Input Amp at " + str(i), pre_state[i])
@@ -228,37 +234,3 @@ def fuzz_permutation_circuit(register_sizes,
         print("Expected Outputs", outputs)
         print("Actual Outputs", actual_outputs)
     assert outputs == actual_outputs
-
-
-def actions_as_ascii_diagram(register_sizes, engine_list, actions):
-    """
-    Args:
-        register_sizes (list[int]):
-        engine_list (list[projectq.cengines.BasicEngine]):
-        actions (function(eng: MainEngine, registers: list[Qureg])):
-    Returns:
-        str:
-    """
-    backend = DummyEngine(save_commands=True)
-    eng = MainEngine(backend=backend, engine_list=engine_list)
-    registers = [eng.allocate_qureg(n) for n in register_sizes]
-    actions(eng, registers)
-    eng.flush()
-    return commands_to_ascii_circuit(backend.received_commands)
-
-
-def actions_as_latex_diagram(register_sizes, engine_list, actions):
-    """
-    Args:
-        register_sizes (list[int]):
-        engine_list (list[projectq.cengines.BasicEngine]):
-        actions (function(eng: MainEngine, registers: list[Qureg])):
-    Returns:
-        str:
-    """
-    backend = CircuitDrawer()
-    eng = MainEngine(backend=backend, engine_list=engine_list)
-    registers = [eng.allocate_qureg(n) for n in register_sizes]
-    actions(eng, registers)
-    eng.flush()
-    return backend.get_latex()

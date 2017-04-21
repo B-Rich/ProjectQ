@@ -11,7 +11,6 @@ def do_multi_not_with_one_big_not_and_friends(targets, controls):
     N: len(targets) + len(controls)
     Size: O(N)
     Depth: O(N)
-    Sources: ???
     Diagram:
           ⋮                    ⋮
         ──●──      ─────────────●─────────────
@@ -37,8 +36,8 @@ def do_multi_not_with_one_big_not_and_friends(targets, controls):
     if len(targets) == 0:
         return
 
-    # Don't bother with anything fancy if there's less than 2 controls.
-    if len(controls) <= 1:
+    # Don't bother with anything fancy if you can just use Toffolis.
+    if len(controls) <= 2:
         for target in targets:
             X & controls | target
         return
@@ -61,7 +60,6 @@ def cut_not_max_controls_in_half(target, controls, dirty):
     N: len(controls)
     Size: O(N)
     Depth: O(N)
-    Sources: ???
     Diagram:
          n            n
         ━/━●━━       ━/━●━━━━●━━━
@@ -79,8 +77,7 @@ def cut_not_max_controls_in_half(target, controls, dirty):
         dirty (projectq.types.Qubit):
             Extra workspace.
     """
-    if len(controls) <= 2:
-        return
+    assert len(controls) > 2
 
     h = len(controls) // 2
     a = controls[h:]
@@ -97,16 +94,24 @@ def cut_not_max_controls_into_toffolis(target, controls, dirty_reg):
     N: len(controls)
     Size: O(N)
     Depth: O(N)
-    Sources: ???
     Diagram:
-         n            n
-        ━/━●━━       ━/━●━━━━●━━━
-         m │          m │    │
-        ━/━●━━       ━/━┿━●━━┿━●━
-           │     =      │ │  │ │
-        ───⊕──       ───┼─⊕──┼─⊕─
-                        │ │  │ │
-        ──────       ───⊕─●──⊕─●─
+        ──●──      ─────────●────────────●───────
+          │                 │            │
+        ──●──      ─────────●────────────●───────
+          │                 │            │
+        ──┼──      ───────●─⊕─●────────●─⊕─●─────
+          │    =          │   │        │   │
+        ──●──      ───────●───●────────●───●─────
+          │               │   │        │   │
+        ──┼──      ─────●─⊕───⊕─●────●─⊕───⊕─●───
+          │             │       │    │       │
+        ──●──      ─────●───────●────●───────●───
+          │             │       │    │       │
+        ──┼──      ───●─⊕───────⊕─●──⊕───────⊕───
+          │           │           │
+        ──●──      ───●───────────●──────────────
+          │           │           │
+        ──⊕──      ───⊕───────────⊕──────────────
     Args:
         target (projectq.types.Qubit):
             The qubit to toggle if the controls are all satisfied.
@@ -117,8 +122,7 @@ def cut_not_max_controls_into_toffolis(target, controls, dirty_reg):
     """
     d = len(controls) - 2
     assert len(dirty_reg) >= d
-    if len(controls) <= 2:
-        return
+    assert len(controls) > 2
     dirty_reg = dirty_reg[:d]
 
     def sweep(r):

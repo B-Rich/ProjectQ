@@ -28,8 +28,9 @@ def test_circuit_implements_phase_angle_specified_by_gate():
 
 def test_controlled_circuit():
     check_phase_circuit(
-        register_sizes=[5, 3],
-        expected_turns=lambda lens, vals: -vals[0]/2**7 if vals[1] == 7 else 0,
+        register_sizes=[5, 2],
+        expected_turns=lambda (ns, nc), (s, c):
+            s/2**ns/-4 if c + 1 == 1 << nc else 0,
         engine_list=[
             AutoReplacer(DecompositionRuleSet(modules=[
                 phase_gradient_rules

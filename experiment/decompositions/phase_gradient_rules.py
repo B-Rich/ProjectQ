@@ -45,8 +45,10 @@ def do_phase_gradient(target_reg, controls, factor):
 
 
 all_defined_decomposition_rules = [
+    # A gradient is just a chain of partial Z gates.
     DecompositionRule(
         gate_class=PhaseGradientGate,
+        max_controls=2,
         gate_decomposer=lambda cmd: do_phase_gradient(
             target_reg=cmd.qubits[0],
             controls=cmd.control_qubits,
