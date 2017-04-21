@@ -205,18 +205,32 @@ class Qureg(list):
         """
         Get string representation of a quantum register.
         """
-        if len(self) == 1:
-            return "Qubit[" + str(self[0]) + "]"
-        else:
-            return "Qureg" + str([q.id for q in self])
+        return repr(self)
 
     def __repr__(self):
         if len(self) == 0:
-            return "Qureg[]"
+            return "Q[]"
         start_id = self[0].id
-        if all(self[i].id == self[0].id + i for i in range(len(self))):
-            return "Qureg[{}:{}]".format(start_id, start_id + len(self))
-        return str(self)
+        next_id = start_id + 1
+        if len(self) == 1:
+            return "Q{}".format(start_id)
+        id_list = []
+
+        def drain():
+            id_list.append('{}:{}'.format(start_id, next_id)
+                           if next_id > start_id + 1
+                           else '{}'.format(start_id))
+        for q in self[1:]:
+            if q.id == next_id:
+                next_id += 1
+                continue
+
+            drain()
+            start_id = q.id
+            next_id = q.id + 1
+
+        drain()
+        return "Q[{}]".format(', '.join(id_list))
 
     @property
     def engine(self):

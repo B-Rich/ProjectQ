@@ -22,7 +22,7 @@ from ..decompositions import reverse_bits_rules, rotate_bits_rules
 from ..gates import RotateBitsGate
 
 
-def test_reduced_rotate_size():
+def test_toffoli_size_of_bit_rotate():
     rec = DummyEngine(save_commands=True)
     eng = MainEngine(backend=rec, engine_list=[
         AutoReplacer(DecompositionRuleSet(modules=[

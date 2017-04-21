@@ -29,7 +29,6 @@ def check_phase_circuit(register_sizes,
                                  register_vals: tuple[int])):
         engine_list (list[projectq.cengines.BasicEngine]):
         actions (function(eng: MainEngine, registers: list[Qureg])):
-        register_limits (list[int]):
     """
 
     sim = Simulator()
@@ -106,6 +105,7 @@ def check_permutation_circuit(register_sizes,
         example_count = 0
         print(commands_to_ascii_circuit(rec.received_commands))
         print("Register Sizes", register_sizes)
+        print("Register Limits", register_limits)
         print("Differing Permutations [input --> actual != expected]:")
         starts = PermutationSimulator.starting_permutation(register_sizes)
         for a, b in zip(starts, sim.get_permutation(registers)):
@@ -235,6 +235,7 @@ def fuzz_permutation_circuit(register_sizes,
     if outputs != actual_outputs:
         print(commands_to_ascii_circuit(rec.received_commands))
         print("Register Sizes", register_sizes)
+        print("Register Limits", register_limits)
         print("Inputs", inputs)
         print("Expected Outputs", outputs)
         print("Actual Outputs", actual_outputs)

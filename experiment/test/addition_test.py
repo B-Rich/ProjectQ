@@ -46,7 +46,7 @@ def test_exact_commands_for_small_circuit():
     ]
 
 
-def test_decompose_big_to_toffolis():
+def test_toffoli_size_of_addition():
     backend = DummyEngine(save_commands=True)
     eng = MainEngine(backend=backend, engine_list=[
         AutoReplacer(DecompositionRuleSet(modules=[

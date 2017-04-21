@@ -53,7 +53,7 @@ def test_fuzz_do_increment_with_no_controls_and_n_dirty():
                     dirty_reg=regs[1]))
 
 
-def test_decomposition_chain():
+def test_toffoli_size_of_increment():
     backend = DummyEngine(save_commands=True)
     eng = MainEngine(backend=backend, engine_list=[
         AutoReplacer(DecompositionRuleSet(modules=[

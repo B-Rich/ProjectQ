@@ -15,9 +15,9 @@ from experiment.decompositions import (
     rotate_bits_rules,
     reverse_bits_rules,
 )
-from experiment.decompositions.modular_bimultiplication_rules import do_bimultiplication
-from experiment.decompositions_test._test_util import fuzz_permutation_circuit
-from experiment.gates import (
+from ..decompositions.modular_bimultiplication_rules import do_bimultiplication
+from ._test_util import fuzz_permutation_circuit
+from ..gates import (
     ModularBimultiplicationGate,
     ModularScaledAdditionGate,
     RotateBitsGate,
@@ -50,29 +50,29 @@ def test_do_double_multiplication():
     ]
 
 
-def test_reduce_bimultiplication_to_toffolis():
-    rec = DummyEngine(save_commands=True)
-    eng = MainEngine(backend=rec, engine_list=[
-        AutoReplacer(DecompositionRuleSet(modules=[
-            swap2cnot,
-            multi_not_rules,
-            addition_rules,
-            increment_rules,
-            modular_addition_rules,
-            modular_bimultiplication_rules,
-            modular_scaled_addition_rules,
-            pivot_flip_rules,
-            offset_rules,
-            modular_double_rules,
-            rotate_bits_rules,
-            reverse_bits_rules,
-        ])),
-        LimitedCapabilityEngine(allow_toffoli=True),
-    ])
-
-    src = eng.allocate_qureg(5)
-    dst = eng.allocate_qureg(5)
-    ModularBimultiplicationGate(23, (1 << 5) - 13) | (src, dst)
+# def test_toffoli_size_of_bimultiplication():
+#     rec = DummyEngine(save_commands=True)
+#     eng = MainEngine(backend=rec, engine_list=[
+#         AutoReplacer(DecompositionRuleSet(modules=[
+#             swap2cnot,
+#             multi_not_rules,
+#             addition_rules,
+#             increment_rules,
+#             modular_addition_rules,
+#             modular_bimultiplication_rules,
+#             modular_scaled_addition_rules,
+#             pivot_flip_rules,
+#             offset_rules,
+#             modular_double_rules,
+#             rotate_bits_rules,
+#             reverse_bits_rules,
+#         ])),
+#         LimitedCapabilityEngine(allow_toffoli=True),
+#     ])
+#
+#     src = eng.allocate_qureg(5)
+#     dst = eng.allocate_qureg(5)
+#     ModularBimultiplicationGate(23, (1 << 5) - 13) | (src, dst)
 
 
 def test_fuzz_double_multiplication():

@@ -18,13 +18,13 @@ class ModularAdditionGate(BasicMathGate2):
         return ModularSubtractionGate(self.modulus)
 
     def __repr__(self):
-        return 'ModularAdditionGate(modulus=' + self.modulus + ')'
+        return 'ModularAdditionGate(modulus={})'.format(self.modulus)
 
     def __str__(self):
         return repr(self)
 
     def ascii_register_labels(self):
-        return ['A', '+A (mod {})'.format(self.modulus)]
+        return ['A', '+A % {}'.format(self.modulus)]
 
 
 class ModularSubtractionGate(BasicMathGate2):
@@ -41,13 +41,13 @@ class ModularSubtractionGate(BasicMathGate2):
         return ModularAdditionGate(self.modulus)
 
     def __repr__(self):
-        return 'ModularSubtractionGate(modulus=' + self.modulus + ')'
+        return 'ModularSubtractionGate(modulus={})'.format(self.modulus)
 
     def __str__(self):
         return repr(self)
 
     def ascii_register_labels(self):
-        return ['A', '−A (mod {})'.format(self.modulus)]
+        return ['A', '−A % {}'.format(self.modulus)]
 
 
 class ModularOffsetGate(BasicMathGate2):

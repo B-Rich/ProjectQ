@@ -22,7 +22,7 @@ from ..decompositions import reverse_bits_rules
 from ..gates import ReverseBits
 
 
-def test_reduced_reversal_size():
+def test_toffoli_size_of_reverse():
     rec = DummyEngine(save_commands=True)
     eng = MainEngine(backend=rec, engine_list=[
         AutoReplacer(DecompositionRuleSet(modules=[

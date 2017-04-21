@@ -5,18 +5,55 @@ from __future__ import unicode_literals
 import itertools
 import random
 
+from projectq import MainEngine
 from projectq.cengines import (LimitedCapabilityEngine,
                                AutoReplacer,
-                               DecompositionRuleSet)
+                               DecompositionRuleSet,
+                               DummyEngine)
+from projectq.setups.decompositions import swap2cnot
 from ._test_util import (
     fuzz_permutation_circuit, check_permutation_circuit
 )
 from ..decompositions import (
-    modular_double_rules, rotate_bits_rules, reverse_bits_rules
+    modular_double_rules,
+    pivot_flip_rules,
+    addition_rules,
+    increment_rules,
+    multi_not_rules,
+    offset_rules,
+    rotate_bits_rules,
+    reverse_bits_rules,
 )
 from ..gates import (
     ModularDoubleGate, ModularUndoubleGate, RotateBitsGate, ReverseBitsGate
 )
+
+
+def test_toffoli_size_of_modular_double():
+    rec = DummyEngine(save_commands=True)
+    eng = MainEngine(backend=rec, engine_list=[
+        AutoReplacer(DecompositionRuleSet(modules=[
+            modular_double_rules,
+            pivot_flip_rules,
+            offset_rules,
+            addition_rules,
+            swap2cnot,
+            increment_rules,
+            multi_not_rules,
+            rotate_bits_rules,
+            reverse_bits_rules,
+        ])),
+        LimitedCapabilityEngine(allow_toffoli=True),
+    ])
+    controls = eng.allocate_qureg(15)
+    target = eng.allocate_qureg(16)
+    dirty = eng.allocate_qureg(2)
+    modulus = 0xAEFD
+
+    ModularDoubleGate(modulus) & controls | target
+
+    assert dirty is not None
+    assert 15000 < len(rec.received_commands) < 30000
 
 
 def test_check_modular_double_permutations_small():

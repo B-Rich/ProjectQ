@@ -51,7 +51,7 @@ def do_modular_addition(gate, input_reg, target_reg, controls):
     OffsetGate(gate.modulus + 1) & controls | input_reg
     PivotFlip | (input_reg, target_reg)
 
-    ConstPivotFlipGate(gate.modulus) | target_reg
+    ConstPivotFlipGate(gate.modulus) & controls | target_reg
 
     MultiNot & controls | input_reg
     OffsetGate(gate.modulus + 1) & controls | input_reg

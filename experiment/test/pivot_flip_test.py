@@ -5,14 +5,70 @@ from __future__ import unicode_literals
 import itertools
 import random
 
+from projectq import MainEngine
 from projectq.cengines import (LimitedCapabilityEngine,
                                AutoReplacer,
-                               DecompositionRuleSet)
+                               DecompositionRuleSet,
+                               DummyEngine)
+from projectq.setups.decompositions import swap2cnot
 from ._test_util import (
     fuzz_permutation_circuit, check_permutation_circuit
 )
-from ..decompositions import pivot_flip_rules
+from ..decompositions import (
+    pivot_flip_rules,
+    addition_rules,
+    offset_rules,
+    increment_rules,
+    multi_not_rules
+)
 from ..gates import PivotFlip, PivotFlipGate, ConstPivotFlipGate
+
+
+def test_toffoli_size_of_pivot_flip():
+    rec = DummyEngine(save_commands=True)
+    eng = MainEngine(backend=rec, engine_list=[
+        AutoReplacer(DecompositionRuleSet(modules=[
+            pivot_flip_rules,
+            addition_rules,
+            swap2cnot,
+            increment_rules,
+            multi_not_rules,
+        ])),
+        LimitedCapabilityEngine(allow_toffoli=True),
+    ])
+    controls = eng.allocate_qureg(15)
+    target1 = eng.allocate_qureg(30)
+    target2 = eng.allocate_qureg(40)
+    dirty = eng.allocate_qureg(2)
+
+    PivotFlip & controls | (target1, target2)
+
+    assert dirty is not None
+    assert 10000 < len(rec.received_commands) < 20000
+
+
+def test_toffoli_size_of_const_pivot_flip():
+    rec = DummyEngine(save_commands=True)
+    eng = MainEngine(backend=rec, engine_list=[
+        AutoReplacer(DecompositionRuleSet(modules=[
+            pivot_flip_rules,
+            addition_rules,
+            offset_rules,
+            swap2cnot,
+            increment_rules,
+            multi_not_rules,
+        ])),
+        LimitedCapabilityEngine(allow_toffoli=True),
+    ])
+    controls = eng.allocate_qureg(15)
+    target = eng.allocate_qureg(32)
+    dirty = eng.allocate_qureg(2)
+    offset = 0x789ABCDEF
+
+    ConstPivotFlipGate(offset) & controls | target
+
+    assert dirty is not None
+    assert 25000 < len(rec.received_commands) < 50000
 
 
 def test_check_const_pivot_flip_permutations_small():
@@ -89,7 +145,7 @@ def test_check_pivot_flip_permutations_small():
                 PivotFlip & regs[2] | (regs[0], regs[1]))
 
 
-def test_fuzz_offset_permutations_large():
+def test_fuzz_pivot_flip_permutations_large():
     for _ in range(10):
         n = random.randint(0, 50)
         e = random.randint(0, 10)
