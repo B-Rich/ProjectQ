@@ -90,7 +90,7 @@ def test_check_pivot_flip_permutations_small():
 
 
 def test_fuzz_offset_permutations_large():
-    for _ in range(1000):
+    for _ in range(10):
         n = random.randint(0, 50)
         e = random.randint(0, 10)
         nc = random.randint(0, 2)

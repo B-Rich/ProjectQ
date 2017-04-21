@@ -36,12 +36,16 @@ class PermutationSimulator(BasicEngine):
         return np.array(self._internal_order_to_given_order(
             self._states, qureg))
 
-    def permutation_equals(self, quregs, permutation_func):
+    def permutation_equals(self,
+                           quregs,
+                           permutation_func,
+                           register_limits=None):
         """
         Args:
             quregs (list[Qureg]):
             permutation_func (function(reg_sizes: tuple[int],
                                        reg_vals: tuple[int]) : tuple[int]):
+            register_limits (list[int]):
         Returns:
             bool:
         """
@@ -53,6 +57,9 @@ class PermutationSimulator(BasicEngine):
             for reg in quregs:
                 xs.append((i >> t) & ((1 << len(reg)) - 1))
                 t += len(reg)
+            if register_limits is not None:
+                if any(x >= m for x, m in zip(xs, register_limits)):
+                    continue
             ys = permutation_func(ns, xs)
             ys = tuple(i & ((1 << len(a)) - 1) for i, a in zip(ys, quregs))
             if ys != tuple(actual[i]):
@@ -131,4 +138,6 @@ class PermutationSimulator(BasicEngine):
             self._apply_operation(cmd.control_qubits, reordered_op)
             return
 
-        raise ValueError("Only support alloc/dealloc/measure/not/math ops.")
+        raise ValueError(
+            "Unsupported operation {}.".format(cmd) +
+            "Only support alloc/dealloc/measure/not/math ops.")

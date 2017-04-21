@@ -77,7 +77,8 @@ def check_phase_circuit(register_sizes,
 def check_permutation_circuit(register_sizes,
                               permutation,
                               engine_list,
-                              actions):
+                              actions,
+                              register_limits=None):
     """
     Args:
         register_sizes (list[int]):
@@ -86,6 +87,7 @@ def check_permutation_circuit(register_sizes,
                                         : tuple[int]):
         engine_list (list[projectq.cengines.BasicEngine]):
         actions (function(eng: MainEngine, registers: list[Qureg])):
+        register_limits (list[int]|None)
     """
 
     sim = PermutationSimulator()
@@ -98,7 +100,8 @@ def check_permutation_circuit(register_sizes,
 
     # Compare.
     permutation_matches = sim.permutation_equals(registers,
-                                                 permutation)
+                                                 permutation,
+                                                 register_limits)
     if not permutation_matches:
         example_count = 0
         print(commands_to_ascii_circuit(rec.received_commands))
@@ -110,6 +113,9 @@ def check_permutation_circuit(register_sizes,
             c = permutation(register_sizes, a)
             c = [i & ((1 << v) - 1) for i, v in zip(c, register_sizes)]
             if not np.array_equal(c, b):
+                if register_limits is not None:
+                    if any(x >= m for x, m in zip(a, register_limits)):
+                        continue
                 example_count += 1
                 if example_count > 10:
                     print("   (...)")
