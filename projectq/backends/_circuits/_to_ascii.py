@@ -139,13 +139,13 @@ def _wire_col(cmd, id_to_index, index_to_id):
     for c in cmd.control_qubits:
         roles[c.id].add('control')
     for i in range(len(cmd.qubits)):
-        m = min(q.id for q in cmd.qubits[i])
+        m = min(id_to_index[q.id] for q in cmd.qubits[i])
         for j in range(len(cmd.qubits[i])):
             q = cmd.qubits[i][j]
             roles[q.id].add('register')
             roles[q.id].add('register' + str(i))
             if id_to_index[q.id] - j != m:
-                notes[q.id].append(str(j))
+                notes[q.id].append(str(j)[-1])
 
     labels, border = _labels_border(cmd)
     w = max(len(e) for e in labels) + (

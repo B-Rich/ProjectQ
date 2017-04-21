@@ -16,7 +16,7 @@ def do_naive_offset(gate, target_reg, controls):
         controls (list[Qubit]):
             Control qubits.
     """
-    offset = gate.offset % 1 << len(target_reg)
+    offset = gate.offset % (1 << len(target_reg))
     for i in range(len(target_reg)):
         if (offset >> i) & 1:
             Increment & controls | target_reg[i:]
