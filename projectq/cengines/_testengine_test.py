@@ -26,20 +26,6 @@ from projectq.cengines import _testengine
 from ._testengine import LimitedCapabilityEngine
 
 
-def test_compare_engine_str():
-    compare_engine = _testengine.CompareEngine()
-    eng = MainEngine(backend=compare_engine, engine_list=[DummyEngine()])
-    qb0 = eng.allocate_qubit()
-    qb1 = eng.allocate_qubit()
-    H | qb0
-    CNOT | (qb0, qb1)
-    eng.flush()
-    expected = ("Qubit 0 : Allocate | Qubit[0], H | Qubit[0], " +
-                "CX | ( Qubit[0], Qubit[1] )\nQubit 1 : Allocate | Qubit[1]," +
-                " CX | ( Qubit[0], Qubit[1] )\n")
-    assert str(compare_engine) == expected
-
-
 def test_compare_engine_is_available():
     compare_engine = _testengine.CompareEngine()
     assert compare_engine.is_available("Anything")

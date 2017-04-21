@@ -225,14 +225,3 @@ def test_command_comparison(main_engine):
     cmd6.tags = ["TestTag"]
     cmd6.add_control_qubits(ctrl_qubit)
     assert cmd6 != cmd1
-
-
-def test_command_str():
-    qubit = Qureg([Qubit(main_engine, 0)])
-    ctrl_qubit = Qureg([Qubit(main_engine, 1)])
-    cmd = _command.Command(main_engine, Rx(0.5), (qubit,))
-    cmd.tags = ["TestTag"]
-    cmd.add_control_qubits(ctrl_qubit)
-    assert str(cmd) == "CRx(0.5) | ( Qubit[1], Qubit[0] )"
-    cmd2 = _command.Command(main_engine, Rx(0.5), (qubit,))
-    assert str(cmd2) == "Rx(0.5) | Qubit[0]"
