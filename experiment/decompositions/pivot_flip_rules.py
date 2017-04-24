@@ -2,7 +2,6 @@
 from __future__ import unicode_literals
 
 from projectq.cengines import DecompositionRule
-from projectq.ops import X
 from ..gates import (
     ConstPivotFlipGate,
     PivotFlipGate,
@@ -22,6 +21,8 @@ def do_pivot_flip(pivot_reg, target_reg, controls, dirty_qubit):
             The register where states are reversed up to the pivot.
         controls (list[Qubit]):
             Control qubits.
+        dirty_qubit (Qubit):
+            Workspace.
     """
     for _ in range(2):
         # Compare.
@@ -42,6 +43,8 @@ def do_const_pivot_flip(gate, target_reg, controls, dirty_qubit):
             The register where states are reversed up to the pivot.
         controls (list[Qubit]):
             Control qubits.
+        dirty_qubit (Qubit):
+            Workspace.
     """
     for _ in range(2):
         # Compare.

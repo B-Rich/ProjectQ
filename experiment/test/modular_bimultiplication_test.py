@@ -50,29 +50,35 @@ def test_do_double_multiplication():
     ]
 
 
-# def test_toffoli_size_of_bimultiplication():
-#     rec = DummyEngine(save_commands=True)
-#     eng = MainEngine(backend=rec, engine_list=[
-#         AutoReplacer(DecompositionRuleSet(modules=[
-#             swap2cnot,
-#             multi_not_rules,
-#             addition_rules,
-#             increment_rules,
-#             modular_addition_rules,
-#             modular_bimultiplication_rules,
-#             modular_scaled_addition_rules,
-#             pivot_flip_rules,
-#             offset_rules,
-#             modular_double_rules,
-#             rotate_bits_rules,
-#             reverse_bits_rules,
-#         ])),
-#         LimitedCapabilityEngine(allow_toffoli=True),
-#     ])
-#
-#     src = eng.allocate_qureg(5)
-#     dst = eng.allocate_qureg(5)
-#     ModularBimultiplicationGate(23, (1 << 5) - 13) | (src, dst)
+def test_toffoli_size_of_bimultiplication():
+    rec = DummyEngine(save_commands=True)
+    eng = MainEngine(backend=rec, engine_list=[
+        AutoReplacer(DecompositionRuleSet(modules=[
+            swap2cnot,
+            multi_not_rules,
+            addition_rules,
+            increment_rules,
+            modular_addition_rules,
+            modular_bimultiplication_rules,
+            modular_scaled_addition_rules,
+            pivot_flip_rules,
+            offset_rules,
+            modular_double_rules,
+            rotate_bits_rules,
+            reverse_bits_rules,
+        ])),
+        LimitedCapabilityEngine(allow_toffoli=True),
+    ])
+
+    t1 = eng.allocate_qureg(5)
+    t2 = eng.allocate_qureg(5)
+    controls = eng.allocate_qureg(1)
+    modulus = 29
+    factor = 17
+
+    ModularBimultiplicationGate(factor, modulus) & controls | (t1, t2)
+
+    assert 100000 < len(rec.received_commands) < 300000
 
 
 def test_fuzz_double_multiplication():

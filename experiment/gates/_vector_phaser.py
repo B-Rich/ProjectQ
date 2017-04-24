@@ -7,6 +7,7 @@ import math
 
 import numpy as np
 
+from experiment.extensions import BasicMathGate2
 from projectq.ops import BasicGate
 
 
@@ -37,7 +38,7 @@ class VectorPhaserGate(BasicGate):
 
     @property
     def matrix(self):
-        v = np.mat(self.vector)
+        v = np.mat(self.vector, np.float64)
         d = np.dot(np.conj(np.transpose(v)), v)
         d /= np.trace(d)
         p = _exp_pi_i(self.half_turns)
@@ -64,6 +65,8 @@ class VectorPhaserGate(BasicGate):
         raise NotImplementedError()
 
     def _exponent_str(self):
+        if self.half_turns % 2 == 0:
+            return '0'
         h = abs(self.half_turns)
         k = int(math.floor(0.5 + math.log(float(h), 2)))
         if 2**k == h:
@@ -73,6 +76,8 @@ class VectorPhaserGate(BasicGate):
         return str(self.half_turns)
 
     def _exponent_repr(self):
+        if self.half_turns % 2 == 0:
+            return '0'
         h = abs(self.half_turns)
         k = int(math.floor(0.5 + math.log(float(h), 2)))
         if 2**k == h:
@@ -112,4 +117,17 @@ class ZGate(VectorPhaserGate):
             return "T⁻¹"
         return VectorPhaserGate.__str__(self)
 
+
+class XGate(VectorPhaserGate):
+    def __init__(self, half_turns=1.0):
+        VectorPhaserGate.__init__(self, [1, -1], half_turns)
+
+    def with_half_turns(self, half_turns):
+        return XGate(half_turns)
+
+    def base_str(self):
+        return 'X'
+
+
+X = XGate()
 Z = ZGate()

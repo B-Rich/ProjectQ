@@ -10,6 +10,9 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from __future__ import unicode_literals
+
+
 """
 Contains a compiler engine which counts the number of calls for each type of
 gate used in a circuit, in addition to the max. number of active qubits.
@@ -75,7 +78,7 @@ class ResourceCounter(BasicEngine):
         self.max_width = max(self.max_width, self._active_qubits)
 
         ctrl_cnt = get_control_count(cmd)
-        gate_name = ctrl_cnt * "C" + str(cmd.gate)
+        gate_name = '{}{}'.format(ctrl_cnt * 'C', cmd.gate)
 
         try:
             self.gate_counts[gate_name] += 1
@@ -94,10 +97,10 @@ class ResourceCounter(BasicEngine):
         if len(self.gate_counts) > 0:
             gate_list = []
             for gate, num in self.gate_counts.items():
-                gate_list.append(gate + " : " + str(num))
-            return ("\n".join(list(sorted(gate_list))) +
-                    "\n\nMax. width (number of qubits) : " +
-                    str(self.max_width) + ".")
+                gate_list.append('{} : {}'.format(gate, num))
+            return unicode("\n".join(list(sorted(gate_list))) +
+                    "\n\nMax. width (number of qubits) : {}.".format(
+                        self.max_width))
         return "(No quantum resources used)"
 
     def receive(self, command_list):
