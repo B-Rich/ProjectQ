@@ -3,6 +3,11 @@ from __future__ import unicode_literals
 
 from projectq.cengines import DecompositionRule
 from projectq.ops import X
+from ..extensions.command_predicates import (
+    min_workspace,
+    min_controls,
+    max_controls,
+)
 from ..gates import Increment, OffsetGate, MultiNot
 
 
@@ -219,9 +224,8 @@ def do_controlled_offset(gate, target_reg, dirty_qubit, controls):
 all_defined_decomposition_rules = [
     # Separate the controlling from the offsetting.
     DecompositionRule(
-        min_controls=1,
-        min_workspace=1,
         gate_class=OffsetGate,
+        gate_recognizer=min_controls(1) & min_workspace(1),
         gate_decomposer=lambda cmd: do_controlled_offset(
             gate=cmd.gate,
             target_reg=cmd.qubits[0],
@@ -230,9 +234,8 @@ all_defined_decomposition_rules = [
 
     # Divide-and-conquer an uncontrolled offset.
     DecompositionRule(
-        max_controls=0,
-        min_workspace=1,
         gate_class=OffsetGate,
+        gate_recognizer=max_controls(0) & min_workspace(1),
         gate_decomposer=lambda cmd: do_recursive_offset(
             gate=cmd.gate,
             target_reg=cmd.qubits[0],

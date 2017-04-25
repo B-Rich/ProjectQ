@@ -25,13 +25,7 @@ class DecompositionRule:
     def __init__(self,
                  gate_class,
                  gate_decomposer,
-                 custom_predicate=lambda cmd: True,
-                 min_workspace=0,
-                 max_workspace=float('inf'),
-                 min_register_sizes=None,
-                 max_register_sizes=None,
-                 max_controls=float('infinity'),
-                 min_controls=0):
+                 gate_recognizer=lambda cmd: True):
         """
         Args:
             gate_class (type): The type of gate that this rule decomposes.
@@ -49,29 +43,7 @@ class DecompositionRule:
                 corresponding to the high-level function of a gate of type
                 gate_class.
 
-            min_workspace (int):
-                When this many 'workspace qubits' aren't already allocated and
-                available, the decomposition won't be used.
-
-            max_workspace (int):
-                When more than this many 'workspace qubits' are available,
-                the decomposition won't be used.
-
-            min_register_sizes (None|list[int]):
-                When the number of registers doesn't match the size of the
-                list, or any register is smaller than its corresponding entry,
-                the decomposition won't be used.
-
-            max_register_sizes (None|list[int]):
-                When the number of registers doesn't match the size of the
-                list, or any register is larger than its corresponding entry,
-                the decomposition won't be used.
-
-            max_controls (int|infinity):
-                When a command has more than this many controls, the
-                decomposition won't be used.
-
-            custom_predicate (function[Command] : boolean):
+            gate_recognizer (function[Command] : boolean):
                 A function that determines if the decomposition applies to the
                 given command (on top of the filtering by gate_class).
 
@@ -94,13 +66,7 @@ class DecompositionRule:
 
         self.gate_class = gate_class
         self.gate_decomposer = gate_decomposer
-        self._min_extra_space = min_workspace
-        self._max_extra_space = max_workspace
-        self._max_controls = max_controls
-        self._min_controls = min_controls
-        self._min_register_sizes = min_register_sizes
-        self._max_register_sizes = max_register_sizes
-        self.custom_predicate = custom_predicate
+        self.gate_recognizer = gate_recognizer
 
     def can_apply_to_command(self, cmd):
         """
@@ -109,31 +75,5 @@ class DecompositionRule:
         Returns:
             bool: If this decomposition rule can be applied to the command.
         """
-        if not isinstance(cmd.gate, self.gate_class):
-            return False
-
-        controls = len(cmd.control_qubits)
-        if controls < self._min_controls:
-            return False
-        if controls > self._max_controls:
-            return False
-
-        extra_space = len(cmd.untouched_qubits())
-        if extra_space < self._min_extra_space:
-            return False
-        if extra_space > self._max_extra_space:
-            return False
-
-        if self._max_register_sizes is not None and (
-                len(cmd.qubits) != len(self._max_register_sizes) or
-                any(len(r) > n
-                    for r, n in zip(cmd.qubits, self._max_register_sizes))):
-            return False
-
-        if self._max_register_sizes is not None and (
-                len(cmd.qubits) != len(self._min_register_sizes) or
-                any(len(r) < n
-                    for r, n in zip(cmd.qubits, self._min_register_sizes))):
-            return False
-
-        return self.custom_predicate(cmd)
+        return (isinstance(cmd.gate, self.gate_class) and
+                self.gate_recognizer(cmd))

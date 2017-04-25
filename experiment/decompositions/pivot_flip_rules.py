@@ -2,6 +2,9 @@
 from __future__ import unicode_literals
 
 from projectq.cengines import DecompositionRule
+from ..extensions.command_predicates import (
+    min_workspace,
+)
 from ..gates import (
     ConstPivotFlipGate,
     PivotFlipGate,
@@ -58,8 +61,8 @@ def do_const_pivot_flip(gate, target_reg, controls, dirty_qubit):
 
 all_defined_decomposition_rules = [
     DecompositionRule(
-        min_workspace=1,
         gate_class=ConstPivotFlipGate,
+        gate_recognizer=min_workspace(1),
         gate_decomposer=lambda cmd: do_const_pivot_flip(
             cmd.gate,
             target_reg=cmd.qubits[0],
@@ -67,8 +70,8 @@ all_defined_decomposition_rules = [
             dirty_qubit=cmd.untouched_qubits()[0])),
 
     DecompositionRule(
-        min_workspace=1,
         gate_class=PivotFlipGate,
+        gate_recognizer=min_workspace(1),
         gate_decomposer=lambda cmd: do_pivot_flip(
             pivot_reg=cmd.qubits[0],
             target_reg=cmd.qubits[1],

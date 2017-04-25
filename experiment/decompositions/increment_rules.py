@@ -2,6 +2,11 @@
 
 from projectq.cengines import DecompositionRule
 from projectq.ops import X
+from ..extensions.command_predicates import (
+    min_workspace,
+    min_workspace_vs_reg1,
+    max_controls,
+)
 from ..gates import Add, Subtract, IncrementGate, MultiNot
 
 
@@ -106,19 +111,16 @@ def do_increment_with_1_dirty(target_reg, dirty_qubit, controls):
 all_defined_decomposition_rules = [
     DecompositionRule(
         gate_class=IncrementGate,
+        gate_recognizer=max_controls(0) & min_workspace_vs_reg1(factor=1),
         gate_decomposer=lambda cmd: do_increment_with_no_controls_and_n_dirty(
             target_reg=cmd.qubits[0],
-            dirty_reg=cmd.untouched_qubits()),
-        max_controls=0,
-        custom_predicate=lambda cmd:
-            len(cmd.untouched_qubits()) >= len(cmd.qubits[0])),
+            dirty_reg=cmd.untouched_qubits())),
 
     DecompositionRule(
         gate_class=IncrementGate,
+        gate_recognizer=min_workspace(1),
         gate_decomposer=lambda cmd: do_increment_with_1_dirty(
             target_reg=cmd.qubits[0],
             dirty_qubit=cmd.untouched_qubits()[0],
-            controls=cmd.control_qubits),
-        min_workspace=1,
-    ),
+            controls=cmd.control_qubits)),
 ]

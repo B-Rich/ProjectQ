@@ -4,6 +4,10 @@ from __future__ import unicode_literals
 
 from projectq.cengines import DecompositionRule
 from projectq.ops import Swap, X
+from ..extensions.command_predicates import (
+    min_controls,
+    max_controls,
+)
 from ..gates import ReverseBitsGate
 
 
@@ -170,8 +174,8 @@ def do_controlled_multi_swap(reg1, reg2, dirty, controls):
 all_defined_decomposition_rules = [
     # When there aren't many controls, just do a bunch of C-Swaps.
     DecompositionRule(
-        max_controls=1,
         gate_class=ReverseBitsGate,
+        gate_recognizer=max_controls(1),
         gate_decomposer=lambda cmd: do_naive_bit_reverse(
             target_reg=cmd.qubits[0],
             controls=cmd.control_qubits)),
@@ -179,8 +183,8 @@ all_defined_decomposition_rules = [
     # When there are more controls, do part of the operation then use the
     # free'd up workspace to toggle-control the rest.
     DecompositionRule(
-        min_controls=2,
         gate_class=ReverseBitsGate,
+        gate_recognizer=min_controls(2),
         gate_decomposer=lambda cmd: do_efficient_controlled_bit_reverse(
             target_reg=cmd.qubits[0],
             controls=cmd.control_qubits)),

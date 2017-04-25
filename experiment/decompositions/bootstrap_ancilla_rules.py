@@ -4,7 +4,13 @@ from __future__ import unicode_literals
 
 from projectq.cengines import DecompositionRule
 from projectq.ops import X, XGate, H
-from ..gates import Increment, Decrement, PhaseGradient, Z, IncrementGate
+from ..extensions.command_predicates import (
+    max_workspace,
+    min_controls,
+)
+from ..gates import (
+    Increment, Decrement, PhaseGradient, Z, IncrementGate, OffsetGate,
+)
 
 
 def do_bootstrap_ancilla_out_of_big_cnot(target, controls):
@@ -82,12 +88,39 @@ def do_bootstrap_ancilla_out_of_big_increment(target_reg, controls):
     Increment & controls | low
 
 
+def do_bootstrap_ancilla_out_of_big_offset(gate, target_reg, controls):
+    """
+    Reduces a controlled offset without workspace into simpler operations.
+
+    N: len(target_reg)
+    C: len(controls)
+    Size: O(C + N lg N)
+    Depth: O(C + N)
+    Args:
+        gate (OffsetGate):
+            The offset gate.
+        target_reg (projectq.types.Qureg):
+            The qubit register to increment.
+        controls (projectq.types.Qureg):
+            The qubits to condition the toggling on.
+    """
+    # Trivial case: nothing to add.
+    if gate.offset == 0 or len(target_reg) == 0:
+        return
+
+    # Pull out the LSB increment.
+    if gate.offset & 1:
+        Increment & controls | target_reg
+
+    # Then use the LSB as workspace.
+    OffsetGate(gate.offset >> 1) & controls | target_reg[1:]
+
+
 all_defined_decomposition_rules = [
     # Reduce a C*NOT without workspace into operations with workspace.
     DecompositionRule(
         gate_class=XGate,
-        min_controls=2,
-        max_workspace=0,
+        gate_recognizer=min_controls(2) & max_workspace(0),
         gate_decomposer=lambda cmd: do_bootstrap_ancilla_out_of_big_cnot(
             target=cmd.qubits[0],
             controls=cmd.control_qubits)),
@@ -95,8 +128,17 @@ all_defined_decomposition_rules = [
     # Simplify an increment without workspace by extracting a C*NOT from it.
     DecompositionRule(
         gate_class=IncrementGate,
-        max_workspace=0,
+        gate_recognizer=max_workspace(0),
         gate_decomposer=lambda cmd: do_bootstrap_ancilla_out_of_big_increment(
+            target_reg=cmd.qubits[0],
+            controls=cmd.control_qubits)),
+
+    # Simplify an offset without workspace by extracting an increment from it.
+    DecompositionRule(
+        gate_class=OffsetGate,
+        gate_recognizer=max_workspace(0),
+        gate_decomposer=lambda cmd: do_bootstrap_ancilla_out_of_big_offset(
+            gate=cmd.gate,
             target_reg=cmd.qubits[0],
             controls=cmd.control_qubits)),
 ]

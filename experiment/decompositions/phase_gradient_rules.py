@@ -3,6 +3,9 @@ from __future__ import division
 from __future__ import unicode_literals
 
 from projectq.cengines import DecompositionRule
+from ..extensions.command_predicates import (
+    max_controls,
+)
 from ..gates import PhaseGradientGate, Z
 
 
@@ -48,7 +51,7 @@ all_defined_decomposition_rules = [
     # A gradient is just a chain of partial Z gates.
     DecompositionRule(
         gate_class=PhaseGradientGate,
-        max_controls=2,
+        gate_recognizer=max_controls(2),
         gate_decomposer=lambda cmd: do_phase_gradient(
             target_reg=cmd.qubits[0],
             controls=cmd.control_qubits,

@@ -3,6 +3,11 @@ from __future__ import unicode_literals
 
 from projectq.cengines import DecompositionRule
 from projectq.ops import X, XGate
+from ..extensions.command_predicates import (
+    min_workspace,
+    min_workspace_vs_controls,
+    min_controls,
+)
 from ..gates import MultiNotGate
 
 
@@ -140,9 +145,8 @@ all_defined_decomposition_rules = [
     # Use many dirty bits from last step to cut all the way down to Toffolis.
     DecompositionRule(
         gate_class=XGate,
-        min_controls=3,
-        custom_predicate=lambda cmd:
-            len(cmd.untouched_qubits()) >= len(cmd.control_qubits) - 2,
+        gate_recognizer=min_controls(3) &
+                        min_workspace_vs_controls(factor=1, offset=-2),
         gate_decomposer=lambda cmd: cut_not_max_controls_into_toffolis(
             target=cmd.qubits[0],
             controls=cmd.control_qubits,
@@ -158,8 +162,7 @@ all_defined_decomposition_rules = [
     # Use a dirty bit to cut control counts in half.
     DecompositionRule(
         gate_class=XGate,
-        min_controls=3,
-        min_workspace=1,
+        gate_recognizer=min_controls(3) & min_workspace(1),
         gate_decomposer=lambda cmd: cut_not_max_controls_in_half(
             target=cmd.qubits[0],
             controls=cmd.control_qubits,
