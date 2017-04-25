@@ -83,7 +83,10 @@ class BasicQubit(object):
         Args:
             other (BasicQubit): BasicQubit to which to compare this one
         """
-        return (isinstance(other, self.__class__) and self.id == other.id and
+        if self.id == -1:
+            return self is other
+        return (isinstance(other, BasicQubit) and
+                self.id == other.id and
                 self.engine == other.engine)
 
     def __ne__(self, other):
@@ -99,7 +102,9 @@ class BasicQubit(object):
         Hash definition because of custom __eq__.
         Enables storing a qubit in, e.g., a set.
         """
-        return hash((self.id, self.engine, object.__hash__(self)))
+        if self.id == -1:
+            return object.__hash__(self)
+        return hash((self.engine, self.id))
 
 
 class Qubit(BasicQubit):
@@ -127,7 +132,7 @@ class Qubit(BasicQubit):
 
         Note:
             To prevent problems with automatic deallocation, qubits are not
-                copyable!
+            copyable!
         """
         return self
 
@@ -137,7 +142,7 @@ class Qubit(BasicQubit):
 
         Note:
             To prevent problems with automatic deallocation, qubits are not
-                deepcopyable!
+            deepcopyable!
         """
         return self
 

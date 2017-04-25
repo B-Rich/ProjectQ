@@ -19,9 +19,9 @@ Gates overload the | operator to allow the following syntax:
 
 .. code-block:: python
 
-    Gate | (qreg1, qreg2, qreg2)
-    Gate | (qreg, qubit)
-    Gate | qreg
+    Gate | (qureg1, qureg2, qureg2)
+    Gate | (qureg, qubit)
+    Gate | qureg
     Gate | qubit
     Gate | (qubit,)
 
@@ -34,6 +34,9 @@ from copy import deepcopy
 
 from projectq.types import BasicQubit
 from ._command import Command, apply_command
+
+
+EQ_TOLERANCE = 1e-12
 
 
 class NotMergeable(Exception):
@@ -144,7 +147,7 @@ class BasicGate(object):
                 or a tuple of Qubit or Qureg objects (can be mixed).
         Returns:
             Canonical representation (tuple<qureg>): A tuple containing Qureg
-                (or list of Qubits) objects.
+            (or list of Qubits) objects.
         """
         if not isinstance(qubits, tuple):
             qubits = (qubits,)
@@ -159,13 +162,14 @@ class BasicGate(object):
 
     def generate_command(self, qubits):
         """
-        Return a Command object which represents the gate acting on qubits.
+        Helper function to generate a command consisting of the gate and
+        the qubits being acted upon.
 
         Args:
             qubits: see BasicGate.make_tuple_of_qureg(qubits)
 
         Returns:
-            A Command object which represents the gate acting on qubits.
+            A Command object containing the gate and the qubits.
         """
         qubits = self.make_tuple_of_qureg(qubits)
 
@@ -183,7 +187,8 @@ class BasicGate(object):
         return GateWithCurriedControls(self, controls)
 
     def __or__(self, qubits):
-        """ Operator| overload which enables the syntax Gate | qubits.
+        """
+        Operator| overload which enables the syntax Gate | qubits.
 
         Example:
             1) Gate | qubit
@@ -193,8 +198,8 @@ class BasicGate(object):
             5) Gate | (qureg, qubit)
 
         Args:
-            qubits: a Qubit object, a list of Qubit objects, a Qureg object, or
-                    a tuple of Qubit or Qureg objects (can be mixed).
+            qubits: a Qubit object, a list of Qubit objects, a Qureg object,
+                    or a tuple of Qubit or Qureg objects (can be mixed).
         """
         cmd = self.generate_command(qubits)
         if cmd is not None:
@@ -338,7 +343,7 @@ class BasicRotationGate(BasicGate):
 
     def __eq__(self, other):
         """ Return True if same class and same rotation angle. """
-        tolerance = 1.e-12
+        tolerance = EQ_TOLERANCE
         if isinstance(other, self.__class__):
             difference = abs(self._angle - other._angle) % (4 * math.pi)
             # Return True if angles are close to each other modulo 4 * pi
@@ -464,6 +469,6 @@ class BasicMathGate(BasicGate):
 
         Returns:
             math_fun (function): Python function describing the action of this
-                gate. (See BasicMathGate.__init__ for an example).
+            gate. (See BasicMathGate.__init__ for an example).
         """
         return self._math_function
