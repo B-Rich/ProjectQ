@@ -1,6 +1,6 @@
 from projectq import MainEngine
 from projectq.ops import X, BasicMathGate
-from ._permutation_simulator import PermutationSimulator
+from ..extensions.permutation_simulator import PermutationSimulator
 
 
 def test_simulator_triangle_increment():

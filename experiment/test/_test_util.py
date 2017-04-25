@@ -10,12 +10,11 @@ import random
 import numpy as np
 
 from projectq import MainEngine
-from projectq.backends import (
-    ClassicalSimulator, PermutationSimulator, Simulator
-)
-from projectq.backends._circuits._to_ascii import commands_to_ascii_circuit
+from projectq.backends import ClassicalSimulator, Simulator
 from projectq.cengines import DummyEngine
 from projectq.ops import X, H, All, Rz, Measure
+from ..extensions.permutation_simulator import PermutationSimulator
+from ..extensions.to_ascii import commands_to_ascii_circuit
 
 
 def check_phase_circuit(register_sizes,

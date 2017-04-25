@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from ._to_ascii import commands_to_ascii_circuit
 from projectq.ops import Command, X, Swap
 from projectq.types import Qureg, Qubit
+from ..extensions.to_ascii import commands_to_ascii_circuit
 
 
 def test_empty_circuit():
