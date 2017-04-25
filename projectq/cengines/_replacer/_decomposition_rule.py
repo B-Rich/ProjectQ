@@ -38,13 +38,13 @@ class DecompositionRule:
                 You supply gate_class=MyGate or gate_class=MyGate().__class__,
                 not gate_class=MyGate().
 
-            gate_decomposer (function[Command]): Function which,
+            gate_decomposer (function[projectq.ops.Command]): Function which,
                 given the command to decompose, applies a sequence of gates
                 corresponding to the high-level function of a gate of type
                 gate_class.
 
-            gate_recognizer (function[Command] : boolean):
-                A function that determines if the decomposition applies to the
+            gate_recognizer (function[projectq.ops.Command] : boolean): A
+                predicate that determines if the decomposition applies to the
                 given command (on top of the filtering by gate_class).
 
                 For example, a decomposition rule may only to apply rotation
@@ -67,13 +67,3 @@ class DecompositionRule:
         self.gate_class = gate_class
         self.gate_decomposer = gate_decomposer
         self.gate_recognizer = gate_recognizer
-
-    def can_apply_to_command(self, cmd):
-        """
-        Args:
-            cmd (Command): The command to potentially decompose.
-        Returns:
-            bool: If this decomposition rule can be applied to the command.
-        """
-        return (isinstance(cmd.gate, self.gate_class) and
-                self.gate_recognizer(cmd))
