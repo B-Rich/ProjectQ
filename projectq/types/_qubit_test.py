@@ -124,17 +124,6 @@ def test_weak_qubit_ref():
         qubit.__del__()
 
 
-@pytest.mark.parametrize("qubit_ids, expected",
-                         [([10], "Qubit[10]"), ([1, 2, 3], "Qureg[1, 2, 3]")])
-def test_qureg(qubit_ids, expected):
-    eng = MainEngine(backend=DummyEngine(), engine_list=[DummyEngine()])
-    qureg = _qubit.Qureg()
-    for qubit_id in qubit_ids:
-        qubit = _qubit.Qubit(eng, qubit_id)
-        qureg.append(qubit)
-    assert str(qureg) == expected
-
-
 def test_qureg_measure_if_qubit():
     eng = MainEngine(backend=DummyEngine(), engine_list=[DummyEngine()])
     qureg0 = _qubit.Qureg(eng.allocate_qubit())

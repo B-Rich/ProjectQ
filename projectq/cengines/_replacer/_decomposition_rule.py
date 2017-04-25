@@ -100,7 +100,7 @@ class DecompositionRule:
         self._min_controls = min_controls
         self._min_register_sizes = min_register_sizes
         self._max_register_sizes = max_register_sizes
-        self._custom_predicate = custom_predicate
+        self.custom_predicate = custom_predicate
 
     def can_apply_to_command(self, cmd):
         """
@@ -136,4 +136,4 @@ class DecompositionRule:
                     for r, n in zip(cmd.qubits, self._min_register_sizes))):
             return False
 
-        return self._custom_predicate(cmd)
+        return self.custom_predicate(cmd)

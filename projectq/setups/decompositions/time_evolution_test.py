@@ -51,10 +51,10 @@ def test_recognize_commuting_terms():
     cmd3 = saving_backend.received_commands[7]
     cmd4 = saving_backend.received_commands[8]
 
-    assert te.rule_commuting_terms.gate_recognizer(cmd1)
-    assert not te.rule_commuting_terms.gate_recognizer(cmd2)
-    assert not te.rule_commuting_terms.gate_recognizer(cmd3)
-    assert not te.rule_commuting_terms.gate_recognizer(cmd4)
+    assert te.rule_commuting_terms.custom_predicate(cmd1)
+    assert not te.rule_commuting_terms.custom_predicate(cmd2)
+    assert not te.rule_commuting_terms.custom_predicate(cmd3)
+    assert not te.rule_commuting_terms.custom_predicate(cmd4)
 
 
 def test_decompose_commuting_terms():
@@ -122,18 +122,16 @@ def test_recognize_individual_terms():
     cmd2 = saving_backend.received_commands[6]
     cmd3 = saving_backend.received_commands[7]
 
-    assert not te.rule_individual_terms.gate_recognizer(cmd1)
-    assert te.rule_individual_terms.gate_recognizer(cmd2)
-    assert te.rule_individual_terms.gate_recognizer(cmd3)
+    assert not te.rule_individual_terms.custom_predicate(cmd1)
+    assert te.rule_individual_terms.custom_predicate(cmd2)
+    assert te.rule_individual_terms.custom_predicate(cmd3)
 
 
 def test_decompose_individual_terms():
     saving_eng = DummyEngine(save_commands=True)
 
     def my_filter(self, cmd):
-        if (isinstance(cmd.gate, TimeEvolution)):
-            return False
-        return True
+        return not isinstance(cmd.gate, TimeEvolution)
 
     rules = DecompositionRuleSet([te.rule_individual_terms])
     replacer = AutoReplacer(rules)

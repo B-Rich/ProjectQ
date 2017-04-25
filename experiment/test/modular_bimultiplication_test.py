@@ -30,7 +30,7 @@ from projectq.cengines import (DummyEngine,
 from projectq.setups.decompositions import swap2cnot
 
 
-def test_do_double_multiplication():
+def test_do_bimultiplication():
     backend = DummyEngine(save_commands=True)
     eng = MainEngine(backend=backend, engine_list=[])
     a = eng.allocate_qureg(4)
@@ -81,8 +81,8 @@ def test_toffoli_size_of_bimultiplication():
     assert 100000 < len(rec.received_commands) < 300000
 
 
-def test_fuzz_double_multiplication():
-    for _ in range(100):
+def test_fuzz_bimultiplication():
+    for _ in range(10):
         n = 10
         cn = 1
         mod = 1001
