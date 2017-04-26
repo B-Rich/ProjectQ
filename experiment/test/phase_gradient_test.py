@@ -2,11 +2,10 @@
 from __future__ import division
 from __future__ import unicode_literals
 
-from projectq.cengines import (LimitedCapabilityEngine,
-                               AutoReplacer,
-                               DecompositionRuleSet)
+from projectq.cengines import AutoReplacer, DecompositionRuleSet
 from ._test_util import check_phase_circuit
 from ..decompositions import phase_gradient_rules
+from ..extensions.limited_capability_engine import LimitedCapabilityEngine
 from ..gates import PhaseGradient
 
 

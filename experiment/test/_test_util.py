@@ -39,7 +39,7 @@ def check_phase_circuit(register_sizes,
     for reg in registers:
         for q in reg:
             H | q
-    rec.restart_recording()
+    rec.received_commands = []
     actions(eng, registers)
 
     state = np.array(sim.cheat()[1])
@@ -168,7 +168,7 @@ def check_quantum_permutation_circuit(register_size,
     pre_state = np.array(sim.cheat()[1])
 
     # Simulate.
-    rec.restart_recording()
+    rec.received_commands = []
     actions(eng, [reg])
     actions = list(rec.received_commands)
 
@@ -226,7 +226,7 @@ def fuzz_permutation_circuit(register_sizes,
                 X | registers[i][b]
 
     # Simulate.
-    rec.restart_recording()
+    rec.received_commands = []
     actions(eng, registers)
 
     # Compare outputs.

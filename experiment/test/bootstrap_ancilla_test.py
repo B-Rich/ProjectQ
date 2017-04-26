@@ -2,9 +2,7 @@
 from __future__ import division
 from __future__ import unicode_literals
 
-from projectq.cengines import (LimitedCapabilityEngine,
-                               AutoReplacer,
-                               DecompositionRuleSet)
+from projectq.cengines import AutoReplacer, DecompositionRuleSet
 from projectq.ops import X
 from projectq.setups.decompositions import swap2cnot
 from ._test_util import check_quantum_permutation_circuit
@@ -15,6 +13,7 @@ from ..decompositions import (
     multi_not_rules,
     addition_rules
 )
+from ..extensions.limited_capability_engine import LimitedCapabilityEngine
 from ..gates import Increment
 
 

@@ -5,8 +5,7 @@ from __future__ import unicode_literals
 import random
 
 from projectq import MainEngine
-from projectq.cengines import (LimitedCapabilityEngine,
-                               AutoReplacer,
+from projectq.cengines import (AutoReplacer,
                                DecompositionRuleSet,
                                DummyEngine)
 from projectq.ops import X
@@ -19,6 +18,7 @@ from ..decompositions.multi_not_rules import (
     cut_not_max_controls_in_half,
     cut_not_max_controls_into_toffolis,
 )
+from ..extensions.limited_capability_engine import LimitedCapabilityEngine
 from ..gates import MultiNot
 
 
@@ -27,7 +27,7 @@ def test_do_multi_not_with_one_big_not_and_friends():
     eng = MainEngine(backend=backend, engine_list=[])
     controls = eng.allocate_qureg(5)
     targets = eng.allocate_qureg(5)
-    backend.restart_recording()
+    backend.received_commands = []
 
     do_multi_not_with_one_big_not_and_friends(targets, controls)
 
@@ -49,7 +49,7 @@ def test_do_multi_not_with_one_big_not_and_friends_trivial():
     eng = MainEngine(backend=backend, engine_list=[])
     controls = eng.allocate_qureg(1)
     targets = eng.allocate_qureg(4)
-    backend.restart_recording()
+    backend.received_commands = []
 
     do_multi_not_with_one_big_not_and_friends(targets, controls)
 
@@ -67,7 +67,7 @@ def test_cut_not_max_controls_in_half():
     controls = eng.allocate_qureg(8)
     target = eng.allocate_qureg(1)[0]
     dirty = eng.allocate_qureg(1)[0]
-    backend.restart_recording()
+    backend.received_commands = []
 
     cut_not_max_controls_in_half(target, controls, dirty)
 
@@ -83,7 +83,7 @@ def test_cut_not_max_controls_into_toffolis():
     c = eng.allocate_qureg(4)
     target = eng.allocate_qureg(1)[0]
     d = eng.allocate_qureg(2)
-    backend.restart_recording()
+    backend.received_commands = []
 
     cut_not_max_controls_into_toffolis(target, c, d)
 

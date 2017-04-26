@@ -5,8 +5,7 @@ from __future__ import unicode_literals
 import random
 
 from projectq import MainEngine
-from projectq.cengines import (LimitedCapabilityEngine,
-                               AutoReplacer,
+from projectq.cengines import (AutoReplacer,
                                DecompositionRuleSet,
                                DummyEngine)
 from projectq.setups.decompositions import swap2cnot
@@ -17,6 +16,7 @@ from ..decompositions import (addition_rules,
 from ..decompositions.increment_rules import (
     do_increment_with_no_controls_and_n_dirty
 )
+from ..extensions.limited_capability_engine import LimitedCapabilityEngine
 from ..gates import Subtract, Increment, MultiNot
 
 
@@ -25,7 +25,7 @@ def test_do_increment_with_no_controls_and_n_dirty():
     eng = MainEngine(backend=backend, engine_list=[])
     target = eng.allocate_qureg(10)
     dirty = eng.allocate_qureg(10)
-    backend.restart_recording()
+    backend.received_commands = []
 
     do_increment_with_no_controls_and_n_dirty(target, dirty)
 

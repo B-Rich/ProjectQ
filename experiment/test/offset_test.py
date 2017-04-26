@@ -5,9 +5,7 @@ from __future__ import unicode_literals
 import itertools
 import random
 
-from projectq.cengines import (LimitedCapabilityEngine,
-                               AutoReplacer,
-                               DecompositionRuleSet)
+from projectq.cengines import AutoReplacer, DecompositionRuleSet
 from ._test_util import (
     fuzz_permutation_circuit, check_permutation_circuit
 )
@@ -16,6 +14,7 @@ from ..decompositions.offset_rules import (
     do_predict_carry_signals,
     do_predict_overflow,
 )
+from ..extensions.limited_capability_engine import LimitedCapabilityEngine
 from ..gates import OffsetGate
 
 

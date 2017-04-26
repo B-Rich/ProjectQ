@@ -6,8 +6,7 @@ import itertools
 import random
 
 from projectq import MainEngine
-from projectq.cengines import (LimitedCapabilityEngine,
-                               AutoReplacer,
+from projectq.cengines import (AutoReplacer,
                                DecompositionRuleSet,
                                DummyEngine)
 from projectq.setups.decompositions import swap2cnot
@@ -21,6 +20,7 @@ from ..decompositions import (
     increment_rules,
     multi_not_rules
 )
+from ..extensions.limited_capability_engine import LimitedCapabilityEngine
 from ..gates import PivotFlip, PivotFlipGate, ConstPivotFlipGate
 
 

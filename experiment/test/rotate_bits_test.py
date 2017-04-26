@@ -8,8 +8,7 @@ import random
 from projectq import MainEngine
 from projectq.cengines import (DummyEngine,
                                AutoReplacer,
-                               DecompositionRuleSet,
-                               LimitedCapabilityEngine)
+                               DecompositionRuleSet)
 from projectq.ops import SwapGate
 from projectq.setups.decompositions import swap2cnot
 from ._test_util import (
@@ -19,6 +18,7 @@ from ._test_util import (
 )
 from ..decompositions import multi_not_rules
 from ..decompositions import reverse_bits_rules, rotate_bits_rules
+from ..extensions.limited_capability_engine import LimitedCapabilityEngine
 from ..gates import RotateBitsGate
 
 

@@ -4,16 +4,16 @@ from __future__ import unicode_literals
 import math
 from fractions import Fraction
 
+from .extensions.limited_capability_engine import LimitedCapabilityEngine
+
 from experiment.decompositions import *
 from experiment.gates import *
-from projectq.setups.decompositions import swap2cnot
 from experiment.gates._modular_bimultiplication import multiplicative_inverse
 from projectq import MainEngine
 from projectq.backends import Simulator, ResourceCounter
-from projectq.cengines import (AutoReplacer,
-                               DecompositionRuleSet,
-                               LimitedCapabilityEngine)
+from projectq.cengines import AutoReplacer, DecompositionRuleSet
 from projectq.ops import Measure, H, X
+from projectq.setups.decompositions import swap2cnot
 from projectq.types import Qureg
 
 

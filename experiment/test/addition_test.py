@@ -8,8 +8,7 @@ import random
 from projectq import MainEngine
 from projectq.cengines import (DummyEngine,
                                AutoReplacer,
-                               DecompositionRuleSet,
-                               LimitedCapabilityEngine)
+                               DecompositionRuleSet)
 from projectq.ops import Swap, X
 from projectq.setups.decompositions import swap2cnot
 from projectq.types import Qureg
@@ -22,6 +21,7 @@ from ..decompositions import (
 from ..decompositions.addition_rules import (
     do_addition_with_same_size_and_no_controls
 )
+from ..extensions.limited_capability_engine import LimitedCapabilityEngine
 from ..gates import Add, Subtract, MultiNot, IncrementGate, DecrementGate
 
 
@@ -30,7 +30,7 @@ def test_exact_commands_for_small_circuit():
     eng = MainEngine(backend=backend, engine_list=[])
     src = eng.allocate_qureg(2)
     dst = eng.allocate_qureg(2)
-    backend.restart_recording()
+    backend.received_commands = []
     do_addition_with_same_size_and_no_controls(src, dst)
 
     a, c = src[0], src[1]

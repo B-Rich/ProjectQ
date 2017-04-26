@@ -6,8 +6,7 @@ import itertools
 import random
 
 from projectq import MainEngine
-from projectq.cengines import (LimitedCapabilityEngine,
-                               AutoReplacer,
+from projectq.cengines import (AutoReplacer,
                                DecompositionRuleSet,
                                DummyEngine)
 from projectq.setups.decompositions import swap2cnot
@@ -24,6 +23,7 @@ from ..decompositions import (
     rotate_bits_rules,
     reverse_bits_rules,
 )
+from ..extensions.limited_capability_engine import LimitedCapabilityEngine
 from ..gates import (
     ModularDoubleGate, ModularUndoubleGate, RotateBitsGate, ReverseBitsGate
 )

@@ -15,19 +15,19 @@ from experiment.decompositions import (
     rotate_bits_rules,
     reverse_bits_rules,
 )
-from ..decompositions.modular_bimultiplication_rules import do_bimultiplication
+from projectq import MainEngine
+from projectq.cengines import (DummyEngine,
+                               AutoReplacer,
+                               DecompositionRuleSet)
+from projectq.setups.decompositions import swap2cnot
 from ._test_util import fuzz_permutation_circuit
+from ..decompositions.modular_bimultiplication_rules import do_bimultiplication
+from ..extensions.limited_capability_engine import LimitedCapabilityEngine
 from ..gates import (
     ModularBimultiplicationGate,
     ModularScaledAdditionGate,
     RotateBitsGate,
 )
-from projectq import MainEngine
-from projectq.cengines import (DummyEngine,
-                               AutoReplacer,
-                               DecompositionRuleSet,
-                               LimitedCapabilityEngine)
-from projectq.setups.decompositions import swap2cnot
 
 
 def test_do_bimultiplication():
@@ -37,7 +37,7 @@ def test_do_bimultiplication():
     b = eng.allocate_qureg(4)
     c = eng.allocate_qureg(3)
 
-    backend.restart_recording()
+    backend.received_commands = []
     do_bimultiplication(
         ModularBimultiplicationGate(3, 13), a, b, c)
 
